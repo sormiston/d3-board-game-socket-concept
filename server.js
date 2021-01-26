@@ -26,13 +26,26 @@ io.on('connection', (socket) => {
   io.emit('initialize', { circles, id: socket.id });
 
   socket.on('dragStart', (payload) => {
-    console.log('dragstart event');
-    console.log(payload);
     io.emit('remoteDragStart', {
-      actor: payload.actor,
-      target: payload.target
+      event: payload.event,
+      actor: payload.actor
     });
   });
+
+  socket.on('drag', (payload) => {
+    io.emit('remoteDrag', {
+      event: payload.event,
+      actor: payload.actor
+    });
+  });
+
+  socket.on('dragEnd', (payload) => {
+    io.emit('remoteDragEnd', {
+      event: payload.event,
+      actor: payload.actor
+    });
+  });
+
   // add logic to only emit to NEW connections
 
   // old reference code:

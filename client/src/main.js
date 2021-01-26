@@ -22,34 +22,51 @@ const radius = 32;
 function d3Circles(circles) {
   socket.on('remoteDragStart', (payload) => {
     if (payload.actor === socketId) return;
-    console.log(payload);
-    dragstarted({ remote: true, subject: { index: payload.target } });
+    dragstarted({ ...payload.event, remote: true });
   });
+  socket.on('remoteDrag', (payload) => {
+    if (payload.actor === socketId) return;
+    dragged({ ...payload.event, remote: true });
+  });
+  socket.on('remoteDragEnd', (payload) => {
+    if (payload.actor === socketId) return;
+    dragended({ ...payload.event, remote: true });
+  });
+
   function dragstarted(event) {
     svg.select(`#circle${event.subject.index}`).attr('stroke', 'black');
     // socket emit
     if (!event.remote) {
       socket.emit('dragStart', {
-        actor: socketId,
-        target: event.subject.index
+        event,
+        actor: socketId
       });
     }
   }
-
-  function dragged(event, d) {
+  function dragged(event) {
     svg
       .select(`#circle${event.subject.index}`)
       // if implementing raise, normalize on dragend
       .raise()
-      .attr('cx', (d.x = event.x))
-      .attr('cy', (d.y = event.y));
+      .attr('cx', (d) => (d.x = event.x))
+      .attr('cy', (d) => (d.y = event.y));
 
-    console.log(event.subject.index);
-    console.log(d.index);
+    if (!event.remote) {
+      socket.emit('drag', {
+        event,
+        actor: socketId
+      });
+    }
   }
-
-  function dragended(_, d) {
-    svg.select(`#circle${d.index}`).attr('stroke', null);
+  function dragended(event) {
+    svg.select(`#circle${event.subject.index}`).attr('stroke', null);
+    // socket emit
+    if (!event.remote) {
+      socket.emit('dragEnd', {
+        event,
+        actor: socketId
+      });
+    }
   }
 
   const drag = d3
