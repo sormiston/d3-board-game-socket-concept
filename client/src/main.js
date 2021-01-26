@@ -1,11 +1,17 @@
 let socket = io('http://localhost:3000');
 
+let initialized = false;
+let socketId;
 
 socket.on('connect', () => {
   console.log('Connected!');
   socket.on('initialize', (data) => {
-    const circles = data;
-    d3Circles(circles)
+    if (!initialized) {
+      socketId = data.id;
+      const circles = data.circles;
+      d3Circles(circles);
+      initialized = true;
+    }
   });
 });
 
@@ -13,27 +19,37 @@ const width = 600;
 const height = 600;
 const radius = 32;
 
-
 function d3Circles(circles) {
-
-  function dragstarted(event, d) {
-    console.log(this.__data__.index);
-    console.log(d.index);
-    const circle = d3.select(svg.selectAll('circle').nodes()[d.index]);
-    circle.attr('fill', 'grey');
-    d3.select(this).attr('stroke', 'black');
+  socket.on('remoteDragStart', (payload) => {
+    if (payload.actor === socketId) return;
+    console.log(payload);
+    dragstarted({ remote: true, subject: { index: payload.target } });
+  });
+  function dragstarted(event) {
+    svg.select(`#circle${event.subject.index}`).attr('stroke', 'black');
+    // socket emit
+    if (!event.remote) {
+      socket.emit('dragStart', {
+        actor: socketId,
+        target: event.subject.index
+      });
+    }
   }
 
   function dragged(event, d) {
-    d3.select(this)
+    svg
+      .select(`#circle${event.subject.index}`)
       // if implementing raise, normalize on dragend
-      // .raise()
+      .raise()
       .attr('cx', (d.x = event.x))
       .attr('cy', (d.y = event.y));
+
+    console.log(event.subject.index);
+    console.log(d.index);
   }
 
-  function dragended() {
-    d3.select(this).attr('stroke', null);
+  function dragended(_, d) {
+    svg.select(`#circle${d.index}`).attr('stroke', null);
   }
 
   const drag = d3
@@ -59,6 +75,7 @@ function d3Circles(circles) {
     .selectAll('circle')
     .data(circles, (d) => d.index)
     .join('circle')
+    .attr('id', (d) => `circle${d.index}`)
     .attr('cx', (d) => d.x)
     .attr('cy', (d) => d.y)
     .attr('r', radius)
