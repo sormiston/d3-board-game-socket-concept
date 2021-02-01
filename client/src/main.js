@@ -17,9 +17,9 @@ socket.on('connect', () => {
 
 const width = 600;
 const height = 600;
-const radius = 32;
+const radius = 30;
 
-function d3Circles(circles) {
+async function d3Circles(circles) {
   socket.on('remoteDragStart', (payload) => {
     if (payload.actor === socketId) return;
     dragstarted({ ...payload.event, remote: true });
@@ -75,21 +75,18 @@ function d3Circles(circles) {
     .on('drag', dragged)
     .on('end', dragended);
 
-  const svg = d3
-    .select('#chart-area')
-    .append('svg')
-    .attr('width', 600)
-    .attr('height', 600)
-    .attr('stroke-width', 2);
+  let svg = d3.select('#chart-area');
 
-  // const circles = d3.range(20).map((i) => ({
-  //   x: Math.random() * (width - radius * 2) + radius,
-  //   y: Math.random() * (height - radius * 2) + radius,
-  //   index: i
-  // }));
+  await d3.svg('assets/Frame2.svg').then((board) => {
+    const boardSvg = board.firstChild;
+    boardSvg.id = 'game-board';
+    svg.node().append(boardSvg);
+  });
 
-  svg
-    .selectAll('circle')
+  svg = d3.select('#game-board')
+
+  const g = svg.append('g');
+  g.selectAll('circle')
     .data(circles, (d) => d.index)
     .join('circle')
     .attr('id', (d) => `circle${d.index}`)
