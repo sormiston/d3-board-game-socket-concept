@@ -8,8 +8,8 @@ socket.on('connect', () => {
   socket.on('initialize', (data) => {
     if (!initialized) {
       socketId = data.id;
-      const circles = data.circles;
-      d3Circles(circles);
+      const tokens = data.tokens;
+      d3Tokens(tokens);
       initialized = true;
     }
   });
@@ -17,9 +17,9 @@ socket.on('connect', () => {
 
 const width = 600;
 const height = 600;
-const radius = 30;
+const radius = 28;
 
-async function d3Circles(circles) {
+async function d3Tokens(tokens) {
   socket.on('remoteDragStart', (payload) => {
     if (payload.actor === socketId) return;
     dragstarted({ ...payload.event, remote: true });
@@ -34,7 +34,7 @@ async function d3Circles(circles) {
   });
 
   function dragstarted(event) {
-    svg.select(`#circle${event.subject.index}`).attr('stroke', 'black');
+    svg.select(`#token${event.subject.index}`).attr('stroke', 'black');
     // socket emit
     if (!event.remote) {
       socket.emit('dragStart', {
@@ -45,8 +45,7 @@ async function d3Circles(circles) {
   }
   function dragged(event) {
     svg
-      .select(`#circle${event.subject.index}`)
-      // if implementing raise, normalize on dragend
+      .select(`#token${event.subject.index}`)
       .raise()
       .attr('cx', (d) => (d.x = event.x))
       .attr('cy', (d) => (d.y = event.y));
@@ -59,7 +58,10 @@ async function d3Circles(circles) {
     }
   }
   function dragended(event) {
-    svg.select(`#circle${event.subject.index}`).attr('stroke', null);
+    svg.select(`#token${event.subject.index}`).attr('stroke', null);
+    
+    attemptMove(this)
+    
     // socket emit
     if (!event.remote) {
       socket.emit('dragEnd', {
@@ -75,28 +77,50 @@ async function d3Circles(circles) {
     .on('drag', dragged)
     .on('end', dragended);
 
-  let svg = d3.select('#chart-area');
+
+  const xScale = d3.scalePoint().domain(d3.range(1,13)).range([52, 789]);
+  const yScale = d3.scalePoint().domain(d3.range(1,9)).range([56, 585]);
+
+
+  const root = d3.select('#chart-area');
 
   await d3.svg('assets/Frame2.svg').then((board) => {
     const boardSvg = board.firstChild;
     boardSvg.id = 'game-board';
-    svg.node().append(boardSvg);
+    root.node().append(boardSvg);
   });
-
-  svg = d3.select('#game-board')
-
+  
+  const svg = d3.select('#game-board');
+  
   const g = svg.append('g');
   g.selectAll('circle')
-    .data(circles, (d) => d.index)
+    .data(tokens, (d) => d.index)
     .join('circle')
-    .attr('id', (d) => `circle${d.index}`)
-    .attr('cx', (d) => d.x)
-    .attr('cy', (d) => d.y)
+    .attr('id', (d) => `token${d.index}`)
+    .attr('cx', (d) => xScale(d.col))
+    .attr('cy', (d) => yScale(d.row))
     .attr('r', radius)
     .attr('fill', (d) => d3.schemeCategory10[d.index % 10])
     .call(drag)
     .on('click', clicked);
 
+  function update() {
+    console.log('ran an update');
+    console.log(tokens)
+    const pieces = g.selectAll('circle')
+  }
+  
+ 
+  function attemptMove(token, newPos) {
+    const oldPos = [token.__data__.col, token.__data__.row]
+    const tokenInData = tokens.find(t => t.index === token.__data__.index)
+    console.log('token passed from event')
+    console.dir(token);
+    console.log(('token identified in data'))
+    console.log(tokenInData);
+    console.log(`Equivalence: ${tokenInData === token}`);
+  }
+  
   function clicked(event, d) {
     if (event.defaultPrevented) return; // dragged
 

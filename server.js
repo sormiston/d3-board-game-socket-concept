@@ -9,21 +9,19 @@ const io = require('socket.io')(http, {
 const PORT = process.env.port || 3000;
 const range = require('lodash.range');
 
-const width = 600;
-const height = 600;
-const radius = 32;
 
-const circles = range(20).map((i) => ({
-  x: Math.random() * (width - radius * 2) + radius,
-  y: Math.random() * (height - radius * 2) + radius,
-  index: i
-}));
+
+// original (random pixel coord) generator
+// const circles = range(20).map((i) => ({
+//   x: Math.random() * (width - radius * 2) + radius,
+//   y: Math.random() * (height - radius * 2) + radius,
+// }));
 
 const users = [];
 io.on('connection', (socket) => {
   console.log('A user connected: ' + socket.id);
   io.emit('handshake', socket.id);
-  io.emit('initialize', { circles, id: socket.id });
+  io.emit('initialize', { tokens, id: socket.id });
 
   socket.on('dragStart', (payload) => {
     io.emit('remoteDragStart', {
