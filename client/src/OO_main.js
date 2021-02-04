@@ -1,24 +1,25 @@
-import { BoardModel, Piece } from './assets/GameLogic.js'
-import gridSvgSrcCode from './assets/Frame2.svg'
+import { BoardModel, Piece } from './assets/GameLogic.js';
+import gridSvgSrcCode from './assets/Frame2.svg';
 
 let socket = io('http://localhost:3000');
 let initialized = false;
 let socketId;
 
-let boardModel
-let boardView
+let boardModel;
+let boardView;
 
 class BoardView {
   radius = 28;
+
   constructor(game, parent) {
     this.game = game;
     // in demo, parent will be w3 selector `#chart-area`
     this.parent = parent;
     this.drag = d3
       .drag()
-      .on('start', this.dragstarted)
-      .on('drag', this.dragged)
-      .on('end', this.dragended);
+      .on('start', (e) => this.dragstarted(e))
+      .on('drag', (e) => this.dragged(e))
+      .on('end', (e) => this.dragended(e));
 
     // TODO: soft-code this to take params (from board param?)
     this.xScale = d3.scalePoint().domain(d3.range(0, 12)).range([52, 789]);
@@ -36,12 +37,12 @@ class BoardView {
       if (payload.actor === socketId) return;
       dragended({ ...payload.event, remote: true });
     });
-    
+
     this.initGame();
   }
 
   dragstarted(event) {
-    svg.select(`#token${event.subject.id}`).attr('stroke', 'black');
+    this.g.select(`#token${event.subject.id}`).attr('stroke', 'black');
     // socket emit
     if (!event.remote) {
       socket.emit('dragStart', {
@@ -51,7 +52,7 @@ class BoardView {
     }
   }
   dragged(event) {
-    svg
+    this.g
       .select(`#token${event.subject.id}`)
       .raise()
       .attr('cx', (d) => (d.x = event.x))
@@ -65,7 +66,7 @@ class BoardView {
     }
   }
   dragended(event) {
-    svg.select(`#token${event.subject.id}`).attr('stroke', null);
+    this.g.select(`#token${event.subject.id}`).attr('stroke', null);
     // this.board.attemptMove(this);
 
     // if remote; call renderTokens for update
@@ -78,9 +79,10 @@ class BoardView {
     }
   }
 
-  clicked(event, d) {
+  clicked(event) {
     if (event.defaultPrevented) return; // dragged
-    d3.select(this)
+    this.g
+      .select(`#${event.target.id}`)
       .transition()
       .attr('r', this.radius * 2)
       .transition()
@@ -89,8 +91,8 @@ class BoardView {
 
   async drawGrid() {
     // const grid = await d3.svg('./assets/Frame2.svg');
-    let parser = new DOMParser()
-    let gridSvgDoc = parser.parseFromString(gridSvgSrcCode, 'image/svg+xml')
+    const parser = new DOMParser();
+    const gridSvgDoc = parser.parseFromString(gridSvgSrcCode, 'image/svg+xml');
     const gridSvg = gridSvgDoc.firstChild;
     gridSvg.id = 'game-board';
     d3.select(this.parent).node().append(gridSvg);
@@ -98,9 +100,9 @@ class BoardView {
 
   async initGame() {
     await this.drawGrid();
-    const svg = d3.select('#game-board');
-    const g = svg.append('g');
-    this.renderTokens(g);
+    this.svg = d3.select('#game-board');
+    this.g = this.svg.append('g');
+    this.renderTokens(this.g);
   }
 
   renderTokens(parent) {
@@ -109,26 +111,25 @@ class BoardView {
       .selectAll('circle')
       .data(this.game.pieces, (piece) => piece.id)
       .join(
-        (enter) => 
+        (enter) =>
           enter
             .append('circle')
             .attr('id', (piece) => `token${piece.id}`)
             .attr('cx', (piece) => {
               // boardModel is referencing its OWN state here...careful..
               const col = boardModel.getPosition(piece, 'col');
-              return this.xScale(col)
+              return this.xScale(col);
             })
             .attr('cy', (piece) => {
-              const row = boardModel.getPosition(piece, 'row')
-              return this.yScale(row)
+              const row = boardModel.getPosition(piece, 'row');
+              return this.yScale(row);
             })
             .attr('r', this.radius)
             .attr('fill', (piece) =>
               piece.color === 'white' ? '#E9E5CE' : '#555D50'
             )
             .call(this.drag)
-            .on('click', this.clicked)
-        ,
+            .on('click', (e) => this.clicked(e)),
         (update) =>
           update
             .call((update) => update.transition(t))
@@ -149,7 +150,7 @@ socket.on('connect', () => {
     if (!initialized) {
       socketId = data.id;
       const gameState = data.gameSetup;
-      boardModel = new BoardModel(gameState.board, gameState.pieces)
+      boardModel = new BoardModel(gameState.board, gameState.pieces);
       boardView = new BoardView(gameState, '#chart-area');
       initialized = true;
       console.log(boardModel);
@@ -157,11 +158,6 @@ socket.on('connect', () => {
     }
   });
 });
-
-
-
-
-
 
 // attemptMove(token, newPos) {
 // const oldPos = [token.__data__.col, token.__data__.row];
