@@ -17,3 +17,5 @@ function dragstarted(event, d) {
 ```
 
 * Board will have to render "upside down" for whoever is playing black.  Least invasive way (to not mutate Board.model.board coord data) to do this would be to control flow BoardView.renderTokens to use inverting scales
+
+## Piece movement flow

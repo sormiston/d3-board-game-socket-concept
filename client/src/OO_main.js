@@ -5,7 +5,8 @@ let socket = io('http://localhost:3000');
 let initialized = false;
 let socketId;
 
-const self = this;
+let boardModel
+let boardView
 
 class BoardView {
   radius = 28;
@@ -20,8 +21,8 @@ class BoardView {
       .on('end', this.dragended);
 
     // TODO: soft-code this to take params (from board param?)
-    this.xScale = d3.scalePoint().domain(d3.range(1, 13)).range([52, 789]);
-    this.yScale = d3.scalePoint().domain(d3.range(1, 9)).range([56, 585]);
+    this.xScale = d3.scalePoint().domain(d3.range(0, 12)).range([52, 789]);
+    this.yScale = d3.scalePoint().domain(d3.range(0, 9)).range([56, 585]);
 
     socket.on('remoteDragStart', (payload) => {
       if (payload.actor === socketId) return;
@@ -79,7 +80,6 @@ class BoardView {
 
   clicked(event, d) {
     if (event.defaultPrevented) return; // dragged
-
     d3.select(this)
       .transition()
       .attr('r', this.radius * 2)
@@ -109,21 +109,26 @@ class BoardView {
       .selectAll('circle')
       .data(this.game.pieces, (piece) => piece.id)
       .join(
-        (enter) =>
+        (enter) => 
           enter
             .append('circle')
             .attr('id', (piece) => `token${piece.id}`)
             .attr('cx', (piece) => {
-              console.log(this);
-              const pos = this.getPosition(piece);
+              // boardModel is referencing its OWN state here...careful..
+              const col = boardModel.getPosition(piece, 'col');
+              return this.xScale(col)
             })
-            .attr('cy', (piece) => this.yScale(piece.row))
+            .attr('cy', (piece) => {
+              const row = boardModel.getPosition(piece, 'row')
+              return this.yScale(row)
+            })
             .attr('r', this.radius)
             .attr('fill', (piece) =>
               piece.color === 'white' ? '#E9E5CE' : '#555D50'
             )
             .call(this.drag)
-            .on('click', this.clicked),
+            .on('click', this.clicked)
+        ,
         (update) =>
           update
             .call((update) => update.transition(t))
@@ -144,11 +149,16 @@ socket.on('connect', () => {
     if (!initialized) {
       socketId = data.id;
       const gameState = data.gameSetup;
-      new BoardView(gameState, '#chart-area');
+      boardModel = new BoardModel(gameState.board, gameState.pieces)
+      boardView = new BoardView(gameState, '#chart-area');
       initialized = true;
+      console.log(boardModel);
+      console.log(boardView);
     }
   });
 });
+
+
 
 
 

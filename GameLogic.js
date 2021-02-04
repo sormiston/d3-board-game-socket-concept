@@ -14,7 +14,6 @@ class BoardModel {
     this.board = []
     this.pieces = []
     // more state stuff ...
-    this.setup();
   }
   addPiece(piece, pos) {
     this.pieces.push(piece)

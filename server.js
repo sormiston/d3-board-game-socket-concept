@@ -11,8 +11,8 @@ const range = require('lodash.range');
 const { BoardModel, Piece } = require('./GameLogic.js')
 
 const game = new BoardModel()
+game.setup()
 
-console.log(BoardModel)
 
 // original (random pixel coord) generator
 // const circles = range(20).map((i) => ({
