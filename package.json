@@ -12,7 +12,8 @@
   "dependencies": {
     "express": "^4.17.1",
     "lodash.range": "^3.2.0",
-    "socket.io": "^3.1.0"
+    "socket.io": "^3.1.0",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "nodemon": "^2.0.7"

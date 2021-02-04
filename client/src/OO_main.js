@@ -1,15 +1,18 @@
-let socket = io('http://localhost:3000');
+import { BoardModel, Piece } from '../assets/GameLogic.js'
 
+let socket = io('http://localhost:3000');
 let initialized = false;
 let socketId;
+
+const self = this;
 
 socket.on('connect', () => {
   console.log('Connected!');
   socket.on('initialize', (data) => {
     if (!initialized) {
       socketId = data.id;
-      const tokens = data.tokens;
-      d3Tokens(tokens);
+      const gameState = data.gameSetup;
+      this.game = new BoardView(gameState, '#chart-area');
       initialized = true;
     }
   });
@@ -17,15 +20,15 @@ socket.on('connect', () => {
 
 class BoardView {
   radius = 28;
-  constructor(board, parent) {
-    this.board = board;
+  constructor(gameState, parent) {
+    this.gameState = gameState;
     // in demo, parent will be w3 selector `#chart-area`
     this.parent = parent;
     this.drag = d3
       .drag()
-      .on('start', dragstarted)
-      .on('drag', dragged)
-      .on('end', dragended);
+      .on('start', this.dragstarted)
+      .on('drag', this.dragged)
+      .on('end', this.dragended);
 
     // TODO: soft-code this to take params (from board param?)
     this.xScale = d3.scalePoint().domain(d3.range(1, 13)).range([52, 789]);
@@ -43,10 +46,12 @@ class BoardView {
       if (payload.actor === socketId) return;
       dragended({ ...payload.event, remote: true });
     });
+    console.log(this.gameState);
+    this.initGame();
   }
 
   dragstarted(event) {
-    svg.select(`#token${event.subject.index}`).attr('stroke', 'black');
+    svg.select(`#token${event.subject.id}`).attr('stroke', 'black');
     // socket emit
     if (!event.remote) {
       socket.emit('dragStart', {
@@ -57,7 +62,7 @@ class BoardView {
   }
   dragged(event) {
     svg
-      .select(`#token${event.subject.index}`)
+      .select(`#token${event.subject.id}`)
       .raise()
       .attr('cx', (d) => (d.x = event.x))
       .attr('cy', (d) => (d.y = event.y));
@@ -70,8 +75,8 @@ class BoardView {
     }
   }
   dragended(event) {
-    svg.select(`#token${event.subject.index}`).attr('stroke', null);
-    this.board.attemptMove(this);
+    svg.select(`#token${event.subject.id}`).attr('stroke', null);
+    // this.board.attemptMove(this);
 
     // if remote; call renderTokens for update
     // socket emit
@@ -88,9 +93,9 @@ class BoardView {
 
     d3.select(this)
       .transition()
-      .attr('r', radius * 2)
+      .attr('r', this.radius * 2)
       .transition()
-      .attr('r', radius);
+      .attr('r', this.radius);
   }
 
   async drawGrid() {
@@ -104,30 +109,35 @@ class BoardView {
     await this.drawGrid();
     const svg = d3.select('#game-board');
     const g = svg.append('g');
-    console.log(g);
-    renderTokens(g);
+    this.renderTokens(g);
   }
+
   renderTokens(parent) {
     const t = parent.transition().duration(750);
     parent
       .selectAll('circle')
-      .data(this.board.model.tokens, (d) => d)
+      .data(this.gameState.pieces, (piece) => piece.id)
       .join(
         (enter) =>
           enter
             .append('circle')
-            .attr('id', (d) => `token${d.index}`)
-            .attr('cx', (d) => xScale(d.col))
-            .attr('cy', (d) => yScale(d.row))
-            .attr('r', radius)
-            .attr('fill', (d) => (d.color === 'white' ? '#E9E5CE' : '#555D50'))
-            .call(drag)
-            .on('click', clicked),
+            .attr('id', (piece) => `token${piece.id}`)
+            .attr('cx', (piece) => {
+              console.log(this);
+              const pos = this.getPosition(piece);
+            })
+            .attr('cy', (piece) => this.yScale(piece.row))
+            .attr('r', this.radius)
+            .attr('fill', (piece) =>
+              piece.color === 'white' ? '#E9E5CE' : '#555D50'
+            )
+            .call(this.drag)
+            .on('click', this.clicked),
         (update) =>
           update
             .call((update) => update.transition(t))
-            .attr('cx', (d) => xScale(d.col))
-            .attr('cy', (d) => yScale(d.row)),
+            .attr('cx', (piece) => xScale(piece.col))
+            .attr('cy', (piece) => yScale(piece.row)),
         (exit) =>
           exit
             .call((exit) => exit.transition(t))
@@ -136,22 +146,13 @@ class BoardView {
       );
   }
 }
-class BoardModel {
-  
-}
 
-class Board {
-  constructor() {
-    this.model = new BoardModel
-  }
-  
-  attemptMove(token, newPos) {
-    // const oldPos = [token.__data__.col, token.__data__.row];
-    // const tokenInData = tokens.find((t) => t.index === token.__data__.index);
-    // console.log('token passed from event');
-    // console.dir(token);
-    // console.log('token identified in data');
-    // console.log(tokenInData);
-    // console.log(`Equivalence: ${tokenInData === token}`);
-  }
-}
+// attemptMove(token, newPos) {
+// const oldPos = [token.__data__.col, token.__data__.row];
+// const tokenInData = tokens.find((t) => t.id === token.__data__.id);
+// console.log('token passed from event');
+// console.dir(token);
+// console.log('token identified in data');
+// console.log(tokenInData);
+// console.log(`Equivalence: ${tokenInData === token}`);
+// }

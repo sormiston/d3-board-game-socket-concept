@@ -1,5 +1,5 @@
-const { v4: uuidv4 } = require('uuid');
-const range = require('lodash.range')
+// import { v4 as uuidv4 } from '../node_modules/uuid/wrapper.js'
+// import range from '../node_modules/lodash.range/index.js'
 
 class Piece {
   constructor(color, type) {
@@ -44,7 +44,7 @@ class BoardModel {
   }
 };
 
-module.exports = {
+export {
   BoardModel,
   Piece
 }
