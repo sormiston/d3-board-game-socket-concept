@@ -1,5 +1,5 @@
-// import { v4 as uuidv4 } from '../node_modules/uuid/wrapper.js'
-// import range from '../node_modules/lodash.range/index.js'
+import { v4 as uuidv4 } from 'uuid'
+import range from 'lodash.range'
 
 class Piece {
   constructor(color, type) {

@@ -1,4 +1,4 @@
-import { BoardModel, Piece } from '../assets/GameLogic.js'
+import { BoardModel, Piece } from './assets/GameLogic.js'
 
 let socket = io('http://localhost:3000');
 let initialized = false;
