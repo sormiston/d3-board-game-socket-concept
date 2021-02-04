@@ -1,4 +1,5 @@
 import { BoardModel, Piece } from './assets/GameLogic.js'
+import gridSvgSrcCode from './assets/Frame2.svg'
 
 let socket = io('http://localhost:3000');
 let initialized = false;
@@ -6,22 +7,10 @@ let socketId;
 
 const self = this;
 
-socket.on('connect', () => {
-  console.log('Connected!');
-  socket.on('initialize', (data) => {
-    if (!initialized) {
-      socketId = data.id;
-      const gameState = data.gameSetup;
-      this.game = new BoardView(gameState, '#chart-area');
-      initialized = true;
-    }
-  });
-});
-
 class BoardView {
   radius = 28;
-  constructor(gameState, parent) {
-    this.gameState = gameState;
+  constructor(game, parent) {
+    this.game = game;
     // in demo, parent will be w3 selector `#chart-area`
     this.parent = parent;
     this.drag = d3
@@ -46,7 +35,7 @@ class BoardView {
       if (payload.actor === socketId) return;
       dragended({ ...payload.event, remote: true });
     });
-    console.log(this.gameState);
+    
     this.initGame();
   }
 
@@ -99,8 +88,10 @@ class BoardView {
   }
 
   async drawGrid() {
-    const grid = await d3.svg('assets/Frame2.svg');
-    const gridSvg = grid.firstChild;
+    // const grid = await d3.svg('./assets/Frame2.svg');
+    let parser = new DOMParser()
+    let gridSvgDoc = parser.parseFromString(gridSvgSrcCode, 'image/svg+xml')
+    const gridSvg = gridSvgDoc.firstChild;
     gridSvg.id = 'game-board';
     d3.select(this.parent).node().append(gridSvg);
   }
@@ -116,7 +107,7 @@ class BoardView {
     const t = parent.transition().duration(750);
     parent
       .selectAll('circle')
-      .data(this.gameState.pieces, (piece) => piece.id)
+      .data(this.game.pieces, (piece) => piece.id)
       .join(
         (enter) =>
           enter
@@ -146,6 +137,21 @@ class BoardView {
       );
   }
 }
+
+socket.on('connect', () => {
+  console.log('Connected!');
+  socket.on('initialize', (data) => {
+    if (!initialized) {
+      socketId = data.id;
+      const gameState = data.gameSetup;
+      new BoardView(gameState, '#chart-area');
+      initialized = true;
+    }
+  });
+});
+
+
+
 
 // attemptMove(token, newPos) {
 // const oldPos = [token.__data__.col, token.__data__.row];
