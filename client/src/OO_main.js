@@ -27,22 +27,22 @@ class BoardView {
 
     socket.on('remoteDragStart', (payload) => {
       if (payload.actor === socketId) return;
-      dragstarted({ ...payload.event, remote: true });
+      this.dragstarted({ ...payload.event, remote: true });
     });
     socket.on('remoteDrag', (payload) => {
       if (payload.actor === socketId) return;
-      dragged({ ...payload.event, remote: true });
+      this.dragged({ ...payload.event, remote: true });
     });
     socket.on('remoteDragEnd', (payload) => {
       if (payload.actor === socketId) return;
-      dragended({ ...payload.event, remote: true });
+      this.dragended({ ...payload.event, remote: true });
     });
 
     this.initGame();
   }
 
   dragstarted(event) {
-    this.g.select(`#token${event.subject.id}`).attr('stroke', 'black');
+    this.tokenLayer.select(`#token${event.subject.id}`).attr('stroke', 'black');
     // socket emit
     if (!event.remote) {
       socket.emit('dragStart', {
@@ -52,11 +52,11 @@ class BoardView {
     }
   }
   dragged(event) {
-    this.g
+    this.tokenLayer
       .select(`#token${event.subject.id}`)
       .raise()
-      .attr('cx', (d) => (d.x = event.x))
-      .attr('cy', (d) => (d.y = event.y));
+      .attr('cx', (d) => event.x)
+      .attr('cy', (d) => event.y);
 
     if (!event.remote) {
       socket.emit('drag', {
@@ -66,8 +66,21 @@ class BoardView {
     }
   }
   dragended(event) {
-    this.g.select(`#token${event.subject.id}`).attr('stroke', null);
-    // this.board.attemptMove(this);
+    const moved = this.tokenLayer
+      .select(`#token${event.subject.id}`)
+      .attr('stroke', null);
+    // Visual checks for legality required to pass to logic checks:
+    // Must be within board bounds
+    if (event.x >= 800 || event.x <= 20 || event.y >= 620 || event.y <= 20) {
+      this.renderTokens();
+      return
+    } 
+    // Must be to a different square
+    
+    
+      // drill to HTML element and pass on to boardModel to for gaming logic
+      const movedTokenHTMLElt = moved._groups[0]
+      boardModel.attemptMove(movedTokenHTMLElt, event)
 
     // if remote; call renderTokens for update
     // socket emit
@@ -81,7 +94,7 @@ class BoardView {
 
   clicked(event) {
     if (event.defaultPrevented) return; // dragged
-    this.g
+    this.tokenLayer
       .select(`#${event.target.id}`)
       .transition()
       .attr('r', this.radius * 2)
@@ -101,13 +114,14 @@ class BoardView {
   async initGame() {
     await this.drawGrid();
     this.svg = d3.select('#game-board');
-    this.g = this.svg.append('g');
-    this.renderTokens(this.g);
+    this.tokenLayer = this.svg.append('g');
+    this.renderTokens();
   }
 
-  renderTokens(parent) {
-    const t = parent.transition().duration(750);
-    parent
+  renderTokens() {
+    console.log('rendering tokens');
+    const t = this.tokenLayer.transition().duration(750);
+    this.tokenLayer
       .selectAll('circle')
       .data(this.game.pieces, (piece) => piece.id)
       .join(
@@ -133,8 +147,15 @@ class BoardView {
         (update) =>
           update
             .call((update) => update.transition(t))
-            .attr('cx', (piece) => xScale(piece.col))
-            .attr('cy', (piece) => yScale(piece.row)),
+            .attr('cx', (piece) => {
+              const col = boardModel.getPosition(piece, 'col');
+
+              return this.xScale(col);
+            })
+            .attr('cy', (piece) => {
+              const row = boardModel.getPosition(piece, 'row');
+              return this.yScale(row);
+            }),
         (exit) =>
           exit
             .call((exit) => exit.transition(t))
@@ -153,7 +174,6 @@ socket.on('connect', () => {
       boardModel = new GameLogic.BoardModel(gameState.board, gameState.pieces);
       boardView = new BoardView(gameState, '#chart-area');
       initialized = true;
-      
     }
   });
 });
