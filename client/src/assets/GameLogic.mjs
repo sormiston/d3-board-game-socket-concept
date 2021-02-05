@@ -22,11 +22,13 @@ class BoardModel {
     this.board[pos[0]][pos[1]] = piece;
   }
   
+  // Searching through matrix must iterate row:col,
+  // but for now, reasoning will be done in col:row, like in chess algebraic
   getPosition(piece, coord) {
-    for (let row in range(0, 8)) {
-      for (let col in range(0, 12)) {
+    for (let row of range(0, 8)) {
+      for (let col of range(0, 12)) {
         if (this.board[row][col] && this.board[row][col].id === piece.id) {
-          return coord === 'row' ? row : col
+          return coord === 'row' ? row : coord === 'col' ? col : [col, row]
         }
       }
     }
@@ -40,6 +42,7 @@ class BoardModel {
     
     for (let row of [0]) {
       for (let col of range(0, 12)) {
+        
         this.addPiece(new Piece('white', 'pawn'), [row, col]);
       }
     }

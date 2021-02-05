@@ -24,6 +24,8 @@ class BoardView {
     // TODO: soft-code this to take params (from board param?)
     this.xScale = d3.scalePoint().domain(d3.range(0, 12)).range([52, 789]);
     this.yScale = d3.scalePoint().domain(d3.range(0, 9)).range([56, 585]);
+    this.xReverseScale = d3.scaleQuantize().domain([52, 789]).range(d3.range(0, 12));
+    this.yReverseScale = d3.scaleQuantize().domain([56, 585]).range(d3.range(0, 9));
 
     socket.on('remoteDragStart', (payload) => {
       if (payload.actor === socketId) return;
@@ -52,11 +54,12 @@ class BoardView {
     }
   }
   dragged(event) {
+    console.log(event);
     this.tokenLayer
       .select(`#token${event.subject.id}`)
       .raise()
-      .attr('cx', (d) => event.x)
-      .attr('cy', (d) => event.y);
+      .attr('cx', (d) => Math.max(52, Math.min(789, event.x)))
+      .attr('cy', (d) => Math.max(56, Math.min(585, event.y)))
 
     if (!event.remote) {
       socket.emit('drag', {
@@ -66,21 +69,24 @@ class BoardView {
     }
   }
   dragended(event) {
-    const moved = this.tokenLayer
-      .select(`#token${event.subject.id}`)
-      .attr('stroke', null);
+    this.tokenLayer.select(`#token${event.subject.id}`).attr('stroke', null);
     // Visual checks for legality required to pass to logic checks:
     // Must be within board bounds
-    if (event.x >= 800 || event.x <= 20 || event.y >= 620 || event.y <= 20) {
+    if (event.x >= 800 || event.x <= 52 || event.y >= 620 || event.y <= 20) {
       this.renderTokens();
-      return
-    } 
-    // Must be to a different square
-    
-    
-      // drill to HTML element and pass on to boardModel to for gaming logic
-      const movedTokenHTMLElt = moved._groups[0]
-      boardModel.attemptMove(movedTokenHTMLElt, event)
+      return;
+    }
+    // Get relevant args for logic
+    const piece = event.subject;
+    const oldPos = boardModel.getPosition(piece);
+    const newPos = [this.xReverseScale(event.x), this.yReverseScale(event.y)];
+
+    console.log(oldPos);
+    console.log(newPos);
+
+    // drill to HTML element and pass on to boardModel to for gaming logic
+    // const movedTokenHTMLElt = moved._groups[0];
+    // boardModel.attemptMove(movedTokenHTMLElt, event);
 
     // if remote; call renderTokens for update
     // socket emit
@@ -120,6 +126,7 @@ class BoardView {
 
   renderTokens() {
     console.log('rendering tokens');
+    console.log(this.tokenLayer)
     const t = this.tokenLayer.transition().duration(750);
     this.tokenLayer
       .selectAll('circle')
