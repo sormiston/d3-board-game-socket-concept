@@ -1,4 +1,4 @@
-import { BoardModel, Piece } from './assets/GameLogic.js';
+import GameLogic from './assets/GameLogic.mjs';
 import gridSvgSrcCode from './assets/Frame2.svg';
 
 let socket = io('http://localhost:3000');
@@ -150,7 +150,7 @@ socket.on('connect', () => {
     if (!initialized) {
       socketId = data.id;
       const gameState = data.gameSetup;
-      boardModel = new BoardModel(gameState.board, gameState.pieces);
+      boardModel = new GameLogic.BoardModel(gameState.board, gameState.pieces);
       boardView = new BoardView(gameState, '#chart-area');
       initialized = true;
       

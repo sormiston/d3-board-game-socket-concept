@@ -46,7 +46,7 @@ class BoardModel {
   }
 };
 
-export {
+export default {
   BoardModel,
   Piece
 }

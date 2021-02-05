@@ -1,16 +1,29 @@
-const server = require('express');
-const http = require('http').createServer(server);
-const io = require('socket.io')(http, {
+import express from 'express'
+import { createServer } from 'http'
+import { Server } from 'socket.io'
+// const io = require('socket.io')(http, {
+//   cors: {
+//     origin: 'http://localhost:8080',
+//     methods: ['GET', 'POST']
+//   }
+// });
+const PORT = process.env.port || 3000;
+// const range = require('lodash.range');
+import range from 'lodash.range'
+import GameLogic from './client/src/assets/GameLogic.mjs'
+// const { BoardModel, Piece } = require('./GameLogic.js');
+
+
+const httpServer = createServer(express)
+const io = new Server(httpServer, {
   cors: {
     origin: 'http://localhost:8080',
     methods: ['GET', 'POST']
   }
-});
-const PORT = process.env.port || 3000;
-const range = require('lodash.range');
-const { BoardModel, Piece } = require('./GameLogic.js');
+})
 
-const game = new BoardModel()
+
+const game = new GameLogic.BoardModel()
 game.setup()
 
 
@@ -65,6 +78,6 @@ io.on('connection', (socket) => {
   });
 });
 
-http.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log('Server started!  Listening on port ' + PORT);
 });
