@@ -44,6 +44,16 @@ class BoardModel {
       }
     }
   }
+  
+  attemptMove(movedToken) {
+    const isLegal = this.checkLegality(movedToken)
+    
+  }
+  
+  checkLegality(movedToken) {
+    
+    // is orthogonal
+  }
 };
 
 export default {
