@@ -10,24 +10,26 @@ class Piece {
 };
 
 class BoardModel {
-  constructor() {
-    this.board = []
-    this.pieces = []
+  constructor(board = [], pieces = []) {
+    this.board = board
+    this.pieces = pieces
     // more state stuff ...
+    
   }
   addPiece(piece, pos) {
     this.pieces.push(piece)
     this.board[pos[0]][pos[1]] = piece;
   }
   
-  getPosition(piece) {
+  getPosition(piece, coord) {
     for (let row in range(0, 8)) {
       for (let col in range(0, 12)) {
-        if (this.board[row][col] && this.board[row][col] === piece) {
-          return [row, col]
+        if (this.board[row][col] && this.board[row][col].id === piece.id) {
+          return coord === 'row' ? row : col
         }
       }
     }
+    // potentially breaking...?
     return null
   }
   setup() {

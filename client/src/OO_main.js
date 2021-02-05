@@ -153,8 +153,7 @@ socket.on('connect', () => {
       boardModel = new BoardModel(gameState.board, gameState.pieces);
       boardView = new BoardView(gameState, '#chart-area');
       initialized = true;
-      console.log(boardModel);
-      console.log(boardView);
+      
     }
   });
 });
