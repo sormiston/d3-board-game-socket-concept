@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "d3": "^6.5.0",
+    "lodash.isequal": "^4.5.0",
     "lodash.range": "^3.2.0",
     "regenerator-runtime": "^0.13.7",
     "socket.io-client": "^3.1.0",
