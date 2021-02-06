@@ -1,19 +1,16 @@
 import GameLogic from './assets/GameLogic.mjs';
 import gridSvgSrcCode from './assets/Board.svg';
-import isEqual from 'lodash.isequal'
+
 
 let socket = io('http://localhost:3000');
 let initialized = false;
 let socketId;
 
-let boardModel;
-let boardView
-
 class BoardView {
   radius = 32;
 
-  constructor(game, parent) {
-    this.game = game;
+  constructor(model, parent) {
+    this.model = model;
     // in demo, parent will be w3 selector `#chart-area`
     this.parent = parent;
     this.drag = d3
@@ -41,7 +38,7 @@ class BoardView {
       if (payload.actor === socketId) return;
       this.dragended({ ...payload.event, remote: true });
     });
-    
+
     // Initialization call
     this.initGame();
   }
@@ -71,7 +68,7 @@ class BoardView {
     }
   }
   dragended(event) {
-    const moved = this.tokenLayer
+    this.tokenLayer
       .select(`#token${event.subject.id}`)
       .attr('stroke', null);
 
@@ -83,24 +80,33 @@ class BoardView {
     }
     // Get relevant args for next tests
     const piece = event.subject;
-    const oldPos = boardModel.getPosition(piece);
-    const newPos = [this.xReverseScale(event.x), this.yReverseScale(event.y)];
+    // ROW:COL
+    const oldPos = this.model.getPosition(piece);
+    const newPos = {
+      row: this.yReverseScale(event.y),
+      col: this.xReverseScale(event.x)
+    };
 
     // Adjust token landing based on detected coords
-    moved
-      .attr('cx', (d) => this.xScale(newPos[0]))
-      .attr('cy', (d) => this.yScale(newPos[1]));
+    // moved
+    //   .attr('cx', (d) => this.xScale(newPos.col))
+    //   .attr('cy', (d) => this.yScale(newPos.row));
 
-    // return if token not actually moved
-    if (isEqual(newPos, oldPos)) return
-    
-    // pass on for logic checks
-    const moveConfirmed = boardModel.attemptMove(newPos, oldPos);
+    // store boolean result of legality checks
+    const moveConfirmed = this.model.checkLegality(newPos, oldPos);
+    // result: mutate state + broadcast to server/opponent OR do not mutate state and renderTokens() to rollback illegal move
     if (moveConfirmed) {
-      
+      const piece = this.model.board[oldPos.row][oldPos.col]
+      this.model.board[oldPos.row][oldPos.col] = null
+      this.model.board[newPos.row][newPos.col] = piece
+      // local update to fine tune token placement
+      this.renderTokens()
+      // TODO: socket broadcast updated board
+    } else {
+      this.renderTokens()
     }
-    // if remote; call renderTokens for update
-    
+    // TODO: socket listen -> if remote AND this player is not actor -> call renderTokens for update
+
     // socket emit
     if (!event.remote) {
       socket.emit('dragEnd', {
@@ -140,19 +146,18 @@ class BoardView {
     const t = this.tokenLayer.transition().duration(750);
     this.tokenLayer
       .selectAll('circle')
-      .data(this.game.pieces, (piece) => piece.id)
+      .data(this.model.pieces, (piece) => piece.id)
       .join(
         (enter) =>
           enter
             .append('circle')
             .attr('id', (piece) => `token${piece.id}`)
             .attr('cx', (piece) => {
-              // boardModel is referencing its OWN state here...careful..
-              const col = boardModel.getPosition(piece, 'col');
+              const col = this.model.getPosition(piece, 'col');
               return this.xScale(col);
             })
             .attr('cy', (piece) => {
-              const row = boardModel.getPosition(piece, 'row');
+              const row = this.model.getPosition(piece, 'row');
               return this.yScale(row);
             })
             .attr('r', this.radius)
@@ -165,12 +170,12 @@ class BoardView {
           update
             .call((update) => update.transition(t))
             .attr('cx', (piece) => {
-              const col = boardModel.getPosition(piece, 'col');
+              const col = this.model.getPosition(piece, 'col');
 
               return this.xScale(col);
             })
             .attr('cy', (piece) => {
-              const row = boardModel.getPosition(piece, 'row');
+              const row = this.model.getPosition(piece, 'row');
               return this.yScale(row);
             }),
         (exit) =>
@@ -188,10 +193,9 @@ socket.on('connect', () => {
     if (!initialized) {
       socketId = data.id;
       const gameState = data.gameSetup;
-      boardModel = new GameLogic.BoardModel(gameState.board, gameState.pieces);
-      new BoardView(gameState, '#game-area');
+      const boardModel = new GameLogic.BoardModel(gameState.board, gameState.pieces);
+      new BoardView(boardModel, '#game-area');
       initialized = true;
     }
   });
 });
-

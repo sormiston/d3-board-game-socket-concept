@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import range from 'lodash.range';
+import isEqual from 'lodash.isequal';
 
 class Piece {
   constructor(color, type) {
@@ -26,7 +27,7 @@ class BoardModel {
     for (let row of range(0, 8)) {
       for (let col of range(0, 12)) {
         if (this.board[row][col] && this.board[row][col].id === piece.id) {
-          return coord === 'row' ? row : coord === 'col' ? col : [col, row];
+          return coord === 'row' ? row : coord === 'col' ? col : { row, col };
         }
       }
     }
@@ -51,25 +52,25 @@ class BoardModel {
     }
   }
 
-  attemptMove(newPos, oldPos) {
-    const oldCol = oldPos[0];
-    const newCol = newPos[0];
-    const oldRow = oldPos[1];
-    const newRow = newPos[1];
-    
-    const isLegal = this.checkLegality(oldCol, newCol, oldRow, newRow);
-    if (isLegal) {
-      const piece = this.board[oldRow][oldCol]
-      this.board[newRow][newCol] = piece
-      this.board[oldRow][oldCol] = null
-      return true
-    } else {
-      return false
-    }
-  }
+  // attemptMove(newPos, oldPos) {
+  //   const isLegal = this.checkLegality(oldCol, newCol, oldRow, newRow);
+  //   if (isLegal) {
+  //     const piece = this.board[oldRow][oldCol]
+  //     this.board[newRow][newCol] = piece
+  //     this.board[oldRow][oldCol] = null
+  //     return true
+  //   } else {
+  //     return false
+  //   }
+  // }
 
-  checkLegality(oldCol, newCol, oldRow, newRow) {
-    // Checks for orthagonality - no diagonals
+  checkLegality(newPos, oldPos) {
+    // false if not actually moved
+    if (isEqual(newPos, oldPos)) return false
+    // constants for reasoning
+    const { col: oldCol, row: oldRow } = oldPos;
+    const { col: newCol, row: newRow } = newPos;
+    // Check for orthagonality - no diagonals
     if (oldCol !== newCol && oldRow !== newRow) {
       return false;
     }
