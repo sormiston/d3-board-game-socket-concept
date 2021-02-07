@@ -44,12 +44,12 @@ class BoardView {
       .range([this.T, this.B]);
     this.xMirrorReverseScale = d3
       .scaleQuantize()
-      .domain([this.R, this.L])
-      .range(d3.range(0, 12));
+      .domain([this.L, this.R])
+      .range(d3.range(11, -1, -1));
     this.yMirrorReverseScale = d3
       .scaleQuantize()
-      .domain([this.B, this.T])
-      .range(d3.range(0, 8));
+      .domain([this.T, this.B])
+      .range(d3.range(7, -1, -1));
 
     // Set Socket listeners
     socket.on('remoteDragStart', (payload) => {
@@ -90,22 +90,31 @@ class BoardView {
   }
   dragended(event) {
     this.tokenLayer.select(`#token${event.subject.id}`).attr('stroke', null);
-
+    console.log(event);
     // Visual checks for legality required before passing to matrix-coordinate based logic checks:
     // Must be within board bounds
-    if (event.x >= 800 || event.x <= 52 || event.y >= 620 || event.y <= 20) {
+    if (event.x >= 820 || event.x <= 20 || event.y >= 640 || event.y <= 20) {
       this.renderTokens();
       return;
     }
     // Get relevant args for next tests
     const piece = event.subject;
     // ROW:COL
+    // REMEMBER WHITE PLAYER IS MIRROR RENDERED
     const oldPos = this.game.getPosition(piece);
     const newPos = {
-      row: this.yReverseScale(event.y),
-      col: this.xReverseScale(event.x)
+      row:
+        this.game.player === 'black'
+          ? this.yReverseScale(event.y)
+          : this.yMirrorReverseScale(event.y),
+      col:
+        this.game.player === 'black'
+          ? this.xReverseScale(event.x)
+          : this.xMirrorReverseScale(event.x)
     };
 
+    console.log(oldPos)
+    console.log(newPos);
     // store boolean result of legality checks
     const moveConfirmed = this.game.checkLegality(newPos, oldPos);
     // result: mutate state + broadcast to server/opponent OR do not mutate state and renderTokens() to rollback illegal move
@@ -168,6 +177,7 @@ class BoardView {
             .attr('id', (piece) => `token${piece.id}`)
             .attr('cx', (piece) => {
               const col = this.game.getPosition(piece, 'col');
+              
               return this.game.player === 'black'
                 ? this.xScale(col)
                 : this.xMirrorScale(col);
