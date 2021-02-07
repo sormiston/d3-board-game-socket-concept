@@ -26,15 +26,12 @@ class BoardView {
 
     // Set Socket listeners
     socket.on('remoteDragStart', (payload) => {
-      if (payload.actor === socketId) return;
       this.dragstarted({ ...payload.event, remote: true });
     });
     socket.on('remoteDrag', (payload) => {
-      if (payload.actor === socketId) return;
       this.dragged({ ...payload.event, remote: true });
     });
     socket.on('remoteDragEnd', (payload) => {
-      if (payload.actor === socketId) return;
       this.dragended({ ...payload.event, remote: true });
     });
 
@@ -47,8 +44,7 @@ class BoardView {
     // socket emit
     if (!event.remote) {
       socket.emit('dragStart', {
-        event,
-        actor: socketId
+        event
       });
     }
   }
@@ -61,8 +57,7 @@ class BoardView {
 
     if (!event.remote) {
       socket.emit('drag', {
-        event,
-        actor: socketId
+        event
       });
     }
   }
@@ -102,8 +97,7 @@ class BoardView {
     // socket emit
     if (!event.remote) {
       socket.emit('dragEnd', {
-        event,
-        actor: socketId
+        event
       });
     }
   }
