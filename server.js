@@ -1,19 +1,8 @@
 import express from 'express'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
-// const io = require('socket.io')(http, {
-//   cors: {
-//     origin: 'http://localhost:8080',
-//     methods: ['GET', 'POST']
-//   }
-// });
-const PORT = process.env.port || 3000;
-// const range = require('lodash.range');
-import range from 'lodash.range'
 import GameLogic from './client/src/assets/GameLogic.mjs'
-// const { BoardModel, Piece } = require('./GameLogic.js');
-
-
+const PORT = process.env.port || 3000;
 const httpServer = createServer(express)
 const io = new Server(httpServer, {
   cors: {
