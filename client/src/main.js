@@ -6,10 +6,14 @@ let initialized = false;
 let socketId;
 
 class BoardView {
-  radius = 32;
+  RADIUS = 28;
+  L = 54;
+  R = 786;
+  T = 58;
+  B = 582;
 
-  constructor(model, parent) {
-    this.model = model;
+  constructor(game, parent) {
+    this.game = game;
     // in demo, parent will be w3 selector `#chart-area`
     this.parent = parent;
     this.drag = d3
@@ -19,10 +23,33 @@ class BoardView {
       .on('end', (e) => this.dragended(e));
 
     // D3 Scale definitions
-    this.xScale = d3.scalePoint().domain(d3.range(0, 12)).range([54, 786]);
-    this.yScale = d3.scalePoint().domain(d3.range(0, 8)).range([58, 582]);
-    this.xReverseScale = d3.scaleQuantize().domain([54, 786]).range(d3.range(0, 12));
-    this.yReverseScale = d3.scaleQuantize().domain([58, 582]).range(d3.range(0, 8));
+    this.xScale = d3.scalePoint().domain(d3.range(0, 12)).range([this.L, this.R]);
+    this.yScale = d3.scalePoint().domain(d3.range(0, 8)).range([this.T, this.B]);
+    this.xReverseScale = d3
+      .scaleQuantize()
+      .domain([this.L, this.R])
+      .range(d3.range(0, 12));
+    this.yReverseScale = d3
+      .scaleQuantize()
+      .domain([this.T, this.B])
+      .range(d3.range(0, 8));
+    // Mirror transformations for white player
+    this.xMirrorScale = d3
+      .scalePoint()
+      .domain(d3.range(11, -1, -1))
+      .range([this.L, this.R]);
+    this.yMirrorScale = d3
+      .scalePoint()
+      .domain(d3.range(7, -1, -1))
+      .range([this.T, this.B]);
+    this.xMirrorReverseScale = d3
+      .scaleQuantize()
+      .domain([this.R, this.L])
+      .range(d3.range(0, 12));
+    this.yMirrorReverseScale = d3
+      .scaleQuantize()
+      .domain([this.B, this.T])
+      .range(d3.range(0, 8));
 
     // Set Socket listeners
     socket.on('remoteDragStart', (payload) => {
@@ -73,19 +100,19 @@ class BoardView {
     // Get relevant args for next tests
     const piece = event.subject;
     // ROW:COL
-    const oldPos = this.model.getPosition(piece);
+    const oldPos = this.game.getPosition(piece);
     const newPos = {
       row: this.yReverseScale(event.y),
       col: this.xReverseScale(event.x)
     };
 
     // store boolean result of legality checks
-    const moveConfirmed = this.model.checkLegality(newPos, oldPos);
+    const moveConfirmed = this.game.checkLegality(newPos, oldPos);
     // result: mutate state + broadcast to server/opponent OR do not mutate state and renderTokens() to rollback illegal move
     if (moveConfirmed) {
-      const piece = this.model.board[oldPos.row][oldPos.col];
-      this.model.board[oldPos.row][oldPos.col] = null;
-      this.model.board[newPos.row][newPos.col] = piece;
+      const piece = this.game.board[oldPos.row][oldPos.col];
+      this.game.board[oldPos.row][oldPos.col] = null;
+      this.game.board[newPos.row][newPos.col] = piece;
       // local update to fine tune token placement
       this.renderTokens();
       // TODO: socket broadcast updated board
@@ -107,9 +134,9 @@ class BoardView {
     this.tokenLayer
       .select(`#${event.target.id}`)
       .transition()
-      .attr('r', this.radius * 2)
+      .attr('r', this.RADIUS * 2)
       .transition()
-      .attr('r', this.radius);
+      .attr('r', this.RADIUS);
   }
 
   async drawGrid() {
@@ -118,13 +145,10 @@ class BoardView {
     const gridSvg = gridSvgDoc.firstChild;
     gridSvg.id = 'game-board';
     d3.select(this.parent).node().append(gridSvg);
-    console.log(d3.select('#RectGrid').selectAll('rect'));
-    d3.select('#RectGrid')
-      .selectAll('rect')
-      .on('dragover', (e) => console.log(this));
   }
 
   async initGame() {
+    this.game.player = prompt('Playing black or white?');
     await this.drawGrid();
     this.svg = d3.select('#game-board');
     this.tokenLayer = this.svg.append('g');
@@ -136,38 +160,44 @@ class BoardView {
     const t = this.tokenLayer.transition().duration(750);
     this.tokenLayer
       .selectAll('circle')
-      .data(this.model.pieces, (piece) => piece.id)
+      .data(this.game.pieces, (piece) => piece.id)
       .join(
         (enter) =>
           enter
             .append('circle')
             .attr('id', (piece) => `token${piece.id}`)
             .attr('cx', (piece) => {
-              const col = this.model.getPosition(piece, 'col');
-              return this.xScale(col);
+              const col = this.game.getPosition(piece, 'col');
+              return this.game.player === 'black'
+                ? this.xScale(col)
+                : this.xMirrorScale(col);
             })
             .attr('cy', (piece) => {
-              const row = this.model.getPosition(piece, 'row');
-              return this.yScale(row);
+              const row = this.game.getPosition(piece, 'row');
+              return this.game.player === 'black'
+                ? this.yScale(row)
+                : this.yMirrorScale(row);
             })
-            .attr('r', this.radius)
+            .attr('r', this.RADIUS)
             .attr('fill', (piece) =>
               piece.color === 'white' ? '#E9E5CE' : '#555D50'
             )
-            .attr('draggable', true)
             .call(this.drag)
             .on('click', (e) => this.clicked(e)),
         (update) =>
           update
             .call((update) => update.transition(t))
             .attr('cx', (piece) => {
-              const col = this.model.getPosition(piece, 'col');
-
-              return this.xScale(col);
+              const col = this.game.getPosition(piece, 'col');
+              return this.game.player === 'black'
+                ? this.xScale(col)
+                : this.xMirrorScale(col);
             })
             .attr('cy', (piece) => {
-              const row = this.model.getPosition(piece, 'row');
-              return this.yScale(row);
+              const row = this.game.getPosition(piece, 'row');
+              return this.game.player === 'black'
+                ? this.yScale(row)
+                : this.yMirrorScale(row);
             }),
         (exit) =>
           exit

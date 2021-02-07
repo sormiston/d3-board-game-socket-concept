@@ -14,6 +14,7 @@ class BoardModel {
   constructor(board = [], pieces = []) {
     this.board = board;
     this.pieces = pieces;
+    this.player = undefined
     // more state stuff ...
   }
   addPiece(piece, pos) {
@@ -39,14 +40,14 @@ class BoardModel {
       this.board.push(new Array(12).fill(null));
     }
 
-    for (let row of [2]) {
-      for (let col of [3, 8]) {
+    for (let row of [0]) {
+      for (let col of range(0, 12)) {
         this.addPiece(new Piece('white', 'pawn'), [row, col]);
       }
     }
 
-    for (let row of [5]) {
-      for (let col of [3, 8]) {
+    for (let row of [7]) {
+      for (let col of range(0, 12)) {
         this.addPiece(new Piece('black', 'pawn'), [row, col]);
       }
     }
