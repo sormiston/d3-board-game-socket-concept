@@ -14,7 +14,8 @@ class BoardModel {
   constructor(board = [], pieces = []) {
     this.board = board;
     this.pieces = pieces;
-    this.player = undefined
+    this.player = undefined;
+    this.toPlay = 'White';
     // more state stuff ...
   }
   addPiece(piece, pos) {
@@ -53,21 +54,9 @@ class BoardModel {
     }
   }
 
-  // attemptMove(newPos, oldPos) {
-  //   const isLegal = this.checkLegality(oldCol, newCol, oldRow, newRow);
-  //   if (isLegal) {
-  //     const piece = this.board[oldRow][oldCol]
-  //     this.board[newRow][newCol] = piece
-  //     this.board[oldRow][oldCol] = null
-  //     return true
-  //   } else {
-  //     return false
-  //   }
-  // }
-
   checkLegality(newPos, oldPos) {
     // false if not actually moved
-    if (isEqual(newPos, oldPos)) return false
+    if (isEqual(newPos, oldPos)) return false;
     // constants for reasoning
     const { col: oldCol, row: oldRow } = oldPos;
     const { col: newCol, row: newRow } = newPos;

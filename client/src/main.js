@@ -1,9 +1,12 @@
 import GameLogic from './GameLogic.mjs';
 import gridSvgSrcCode from './assets/Board.svg';
+import './style.css';
 
 let socket = io('http://localhost:3000');
 let initialized = false;
 let socketId;
+
+// document.body.style.cursor = `url(${handPng})`;
 
 class BoardView {
   RADIUS = 28;
@@ -14,10 +17,12 @@ class BoardView {
 
   constructor(game, parent) {
     this.game = game;
-    // in demo, parent will be w3 selector `#chart-area`
     this.parent = parent;
-    this.boardWidth = null;
-    this.boardHeight = null;
+    // defined after instanciation
+    this.boardWidth;
+    this.boardHeight;
+    this.toPlayDisplay;
+
     this.drag = d3
       .drag()
       .on('start', (e) => this.dragstarted(e))
@@ -53,6 +58,8 @@ class BoardView {
       .domain([this.T, this.B])
       .range(d3.range(7, -1, -1));
 
+    // Axis Definitions
+
     // Set Socket listeners
     socket.on('remoteDragStart', (payload) => {
       this.dragstarted({ ...payload.event, remote: true });
@@ -86,7 +93,16 @@ class BoardView {
   }
   // Drag event handler defs
   dragstarted(event) {
-    this.tokenLayer.select(`#token${event.subject.id}`).attr('stroke', 'black');
+    const pieceSelect = this.tokenLayer.select(`#token${event.subject.id}`);
+    const pieceColor = event.subject.color;
+    if (
+      !event.remote &&
+      (pieceColor.toLowerCase() !== this.game.player.toLowerCase() ||
+        this.game.player.toLowerCase() !== this.game.toPlay.toLowerCase())
+    ) {
+      return;
+    }
+    pieceSelect.attr('stroke', 'black');
     // socket emit
     if (!event.remote) {
       socket.emit('dragStart', {
@@ -95,11 +111,20 @@ class BoardView {
     }
   }
   dragged(event) {
-    this.tokenLayer
-      .select(`#token${event.subject.id}`)
+    const pieceSelect = this.tokenLayer.select(`#token${event.subject.id}`);
+    const pieceColor = event.subject.color;
+    if (
+      !event.remote &&
+      (pieceColor.toLowerCase() !== this.game.player.toLowerCase() ||
+        this.game.player.toLowerCase() !== this.game.toPlay.toLowerCase())
+    ) {
+      return;
+    }
+
+    pieceSelect
       .raise()
-      .attr('cx', (d) => Math.max(52, Math.min(789, event.x)))
-      .attr('cy', (d) => Math.max(56, Math.min(585, event.y)));
+      .attr('cx', (d) => Math.max(this.L, Math.min(this.R, event.x)))
+      .attr('cy', (d) => Math.max(this.T, Math.min(this.B, event.y)));
 
     if (!event.remote) {
       socket.emit('drag', {
@@ -108,10 +133,18 @@ class BoardView {
     }
   }
   dragended(event) {
-    this.tokenLayer.select(`#token${event.subject.id}`).attr('stroke', null);
+    const pieceSelect = this.tokenLayer.select(`#token${event.subject.id}`);
+    const pieceColor = event.subject.color;
+    if (
+      !event.remote &&
+      (pieceColor.toLowerCase() !== this.game.player.toLowerCase() ||
+        this.game.player.toLowerCase() !== this.game.toPlay.toLowerCase())
+    ) {
+      return;
+    }
 
-    // Visual checks for legality required before passing to matrix-coordinate based logic checks:
-    // Must be within board bounds
+    pieceSelect.attr('stroke', null);
+    // Must be within board bounds before passing to scale-based game logic
     if (event.x >= 820 || event.x <= 20 || event.y >= 640 || event.y <= 20) {
       this.renderTokens();
       return;
@@ -131,24 +164,23 @@ class BoardView {
           ? this.xReverseScale(event.x)
           : this.xMirrorReverseScale(event.x)
     };
-
-    console.log(oldPos);
-    console.log(newPos);
     // store boolean result of legality checks
     const moveConfirmed = this.game.checkLegality(newPos, oldPos);
     // result: mutate state + broadcast to server/opponent OR do not mutate state and renderTokens() to rollback illegal move
     if (moveConfirmed) {
-      const piece = this.game.board[oldPos.row][oldPos.col];
+      const piece = event.subject;
+      // const piece = this.game.board[oldPos.row][oldPos.col];
       this.game.board[oldPos.row][oldPos.col] = null;
       this.game.board[newPos.row][newPos.col] = piece;
+
+      this.updateToPlayDisplay();
       // local update to fine tune token placement
       this.renderTokens();
-      // TODO: socket broadcast updated board
+      // TODO: socket broadcast updated board (REDUNDANT?)
     } else {
       this.renderTokens();
     }
-    // TODO: socket listen -> if remote AND this player is not actor -> call renderTokens for update
-
+    // TODO: socket listen -> if remote AND this player is not actor -> call renderTokens for update (REDUNDANT?)
     // socket emit
     if (!event.remote) {
       socket.emit('dragEnd', {
@@ -166,6 +198,10 @@ class BoardView {
       .transition()
       .attr('r', this.RADIUS);
   }
+  updateToPlayDisplay() {
+    this.game.toPlay = this.game.toPlay.toLowerCase() === 'white' ? 'Black' : 'White';
+    this.toPlayDisplay.innerText = `${this.game.toPlay} to move`;
+  }
 
   async drawGrid() {
     const parser = new DOMParser();
@@ -173,7 +209,7 @@ class BoardView {
     const gridSvg = gridSvgDoc.firstChild;
     this.boardWidth = parseInt(gridSvg.getAttribute('viewBox').split(' ')[2]);
     this.boardHeight = parseInt(gridSvg.getAttribute('viewBox').split(' ')[3]);
-    gridSvg.id = 'game-board';
+    // gridSvg.id = 'game-board';
     d3.select(this.parent).node().append(gridSvg);
   }
 
@@ -182,6 +218,8 @@ class BoardView {
     await this.drawGrid();
     this.svg = d3.select('#game-board');
     this.tokenLayer = this.svg.append('g');
+    this.toPlayDisplay = document.querySelector('h2');
+    this.toPlayDisplay.innerText = `${this.game.toPlay} to move`;
     this.renderTokens();
   }
 

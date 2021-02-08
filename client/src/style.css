@@ -1,9 +1,22 @@
+@font-face {
+  font-family: 'Cinzel-Regular';
+  src: url('./assets/Cinzel-Regular.ttf') format('truetype');
+}
 * {
   box-sizing: border-box;
+  text-align: center;
 }
 
+svg {
+  cursor: url('./assets/hand-cleaned-back-0.png'), pointer;
+}
 .container {
   width: 100%;
+}
+
+h2 {
+  font-size: 2rem;
+  font-family: 'Cinzel-Regular', serif;
 }
 
 @media (min-width: 576px) {
