@@ -1,4 +1,4 @@
-import GameLogic from './assets/GameLogic.mjs';
+import GameLogic from './GameLogic.mjs';
 import gridSvgSrcCode from './assets/Board.svg';
 
 let socket = io('http://localhost:3000');
@@ -16,6 +16,8 @@ class BoardView {
     this.game = game;
     // in demo, parent will be w3 selector `#chart-area`
     this.parent = parent;
+    this.boardWidth = null;
+    this.boardHeight = null;
     this.drag = d3
       .drag()
       .on('start', (e) => this.dragstarted(e))
@@ -56,16 +58,33 @@ class BoardView {
       this.dragstarted({ ...payload.event, remote: true });
     });
     socket.on('remoteDrag', (payload) => {
-      this.dragged({ ...payload.event, remote: true });
+      this.dragged({
+        ...payload.event,
+        x: this.xMirrorTransform(payload.event.x),
+        y: this.yMirrorTransform(payload.event.y),
+        remote: true
+      });
     });
     socket.on('remoteDragEnd', (payload) => {
-      this.dragended({ ...payload.event, remote: true });
+      this.dragended({
+        ...payload.event,
+        x: this.xMirrorTransform(payload.event.x),
+        y: this.yMirrorTransform(payload.event.y),
+        remote: true
+      });
     });
 
     // Initialization call
     this.initGame();
   }
-
+  // Mirror transform to be applied on broadcast to opponent
+  xMirrorTransform(x) {
+    return this.boardWidth - x;
+  }
+  yMirrorTransform(y) {
+    return this.boardHeight - y;
+  }
+  // Drag event handler defs
   dragstarted(event) {
     this.tokenLayer.select(`#token${event.subject.id}`).attr('stroke', 'black');
     // socket emit
@@ -90,7 +109,7 @@ class BoardView {
   }
   dragended(event) {
     this.tokenLayer.select(`#token${event.subject.id}`).attr('stroke', null);
-    console.log(event);
+
     // Visual checks for legality required before passing to matrix-coordinate based logic checks:
     // Must be within board bounds
     if (event.x >= 820 || event.x <= 20 || event.y >= 640 || event.y <= 20) {
@@ -113,7 +132,7 @@ class BoardView {
           : this.xMirrorReverseScale(event.x)
     };
 
-    console.log(oldPos)
+    console.log(oldPos);
     console.log(newPos);
     // store boolean result of legality checks
     const moveConfirmed = this.game.checkLegality(newPos, oldPos);
@@ -152,6 +171,8 @@ class BoardView {
     const parser = new DOMParser();
     const gridSvgDoc = parser.parseFromString(gridSvgSrcCode, 'image/svg+xml');
     const gridSvg = gridSvgDoc.firstChild;
+    this.boardWidth = parseInt(gridSvg.getAttribute('viewBox').split(' ')[2]);
+    this.boardHeight = parseInt(gridSvg.getAttribute('viewBox').split(' ')[3]);
     gridSvg.id = 'game-board';
     d3.select(this.parent).node().append(gridSvg);
   }
@@ -177,7 +198,7 @@ class BoardView {
             .attr('id', (piece) => `token${piece.id}`)
             .attr('cx', (piece) => {
               const col = this.game.getPosition(piece, 'col');
-              
+
               return this.game.player === 'black'
                 ? this.xScale(col)
                 : this.xMirrorScale(col);

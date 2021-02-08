@@ -1,7 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import GameLogic from './client/src/assets/GameLogic.mjs';
+import GameLogic from './client/src/GameLogic.mjs';
 const PORT = process.env.port || 3000;
 const httpServer = createServer(express);
 const io = new Server(httpServer, {
