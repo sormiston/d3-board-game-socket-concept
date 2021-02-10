@@ -16,6 +16,8 @@ function dragstarted(event, socket) {
     return;
   }
   pieceSelect.attr('stroke', 'black');
+  console.log(event);
+  console.log(d3.event);
   // socket emit
   if (!event.remote) {
     socket.emit('dragStart', {
@@ -33,7 +35,6 @@ function dragged(event, socket) {
   ) {
     return;
   }
-
   pieceSelect
     .raise()
     .attr('cx', (d) => Math.max(this.L, Math.min(this.R, event.x)))
@@ -57,15 +58,14 @@ function dragended(event, socket) {
   }
 
   pieceSelect.attr('stroke', null);
-  // Must be within board bounds before passing to scale-based game logic
   if (event.x >= 820 || event.x <= 20 || event.y >= 640 || event.y <= 20) {
     this.renderTokens();
     return;
   }
-  // Get relevant args for next tests
+
   const piece = event.subject;
   // ROW:COL
-  // REMEMBER WHITE PLAYER IS MIRROR RENDERED
+
   const oldPos = this.game.getPosition(piece);
   const newPos = {
     row:
@@ -74,26 +74,23 @@ function dragended(event, socket) {
         : this.yMirrorReverseScale(event.y),
     col:
       this.game.player === 'black'
-        ? this.xReverseScale(event.x)
-        : this.xMirrorReverseScale(event.x)
+        ? this.xMirrorReverseScale(event.x)
+        : this.xReverseScale(event.x)
   };
-  // store boolean result of legality checks
+
   const moveConfirmed = this.game.checkLegality(newPos, oldPos);
-  // result: mutate state + broadcast to server/opponent OR do not mutate state and renderTokens() to rollback illegal move
   if (moveConfirmed) {
     const piece = event.subject;
-    // const piece = this.game.board[oldPos.row][oldPos.col];
     this.game.board[oldPos.row][oldPos.col] = null;
     this.game.board[newPos.row][newPos.col] = piece;
 
     this.updateToPlayDisplay();
-    // local update to fine tune token placement
     this.renderTokens();
-    // TODO: socket broadcast updated board (REDUNDANT?)
   } else {
+    // calling render function "rolls back" illegal user action
     this.renderTokens();
   }
-  // TODO: socket listen -> if remote AND this player is not actor -> call renderTokens for update (REDUNDANT?)
+
   // socket emit
   if (!event.remote) {
     socket.emit('dragEnd', {

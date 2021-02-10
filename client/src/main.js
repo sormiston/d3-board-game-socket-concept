@@ -1,13 +1,11 @@
 import GameLogic from './GameLogic.mjs';
-import rootSvgSrc from './assets/Board.svg';
-import * as dragUtils from './dragUtils.js';
+import rootSvgSrc from './assets/Frame3.svg';
+import * as utils from './utils.js';
 import './style.css';
 
 let socket = io('http://localhost:3000');
 let initialized = false;
 let socketId;
-
-// document.body.style.cursor = `url(${handPng})`;
 
 class BoardView {
   RADIUS = 28;
@@ -26,9 +24,9 @@ class BoardView {
 
     this.drag = d3
       .drag()
-      .on('start', (e) => dragUtils.dragstarted.call(this, e, socket))
-      .on('drag', (e) => dragUtils.dragged.call(this, e, socket))
-      .on('end', (e) => dragUtils.dragended.call(this, e, socket));
+      .on('start', (e) => utils.dragstarted.call(this, e, socket))
+      .on('drag', (e) => utils.dragged.call(this, e, socket))
+      .on('end', (e) => utils.dragended.call(this, e, socket));
 
     // D3 Scale definitions
     this.xScale = d3.scalePoint().domain(d3.range(0, 12)).range([this.L, this.R]);
@@ -60,30 +58,46 @@ class BoardView {
       .range(d3.range(7, -1, -1));
 
     // Axis Definitions
+    this.xTopAxis = (player) =>
+      d3
+        .axisTop(player.toLowerCase() === 'black' ? this.xMirrorScale : this.xScale)
+        .tickFormat((d) => String.fromCharCode(d + 65));
+    this.xBottomAxis = (player) =>
+      d3
+        .axisBottom(
+          player.toLowerCase() === 'black' ? this.xMirrorScale : this.xScale
+        )
+        .tickFormat((d) => String.fromCharCode(d + 65));
+    this.yLeftAxis = (player) =>
+      d3.axisLeft(player.toLowerCase() === 'black' ? this.yScale : this.yMirrorScale);
+    this.yRightAxis = (player) =>
+      d3.axisRight(
+        player.toLowerCase() === 'black' ? this.yScale : this.yMirrorScale
+      );
 
     // Set Socket listeners
     socket.on('remoteDragStart', (payload) => {
-      dragUtils.dragstarted.call(this, { ...payload.event, remote: true }, socket);
+      utils.dragstarted.call(this, { ...payload.event, remote: true }, socket);
     });
     socket.on('remoteDrag', (payload) => {
-      dragUtils.dragged.call(
+      utils.dragged.call(
         this,
         {
           ...payload.event,
-          x: dragUtils.xMirrorTransform.call(this, payload.event.x),
-          y: dragUtils.yMirrorTransform.call(this, payload.event.y),
+          x: utils.xMirrorTransform.call(this, payload.event.x),
+          y: utils.yMirrorTransform.call(this, payload.event.y),
           remote: true
         },
         socket
       );
     });
     socket.on('remoteDragEnd', (payload) => {
-      dragUtils.dragended.call(
+      utils.dragended.call(
         this,
         {
           ...payload.event,
-          x: dragUtils.xMirrorTransform.call(this, payload.event.x),
-          y: dragUtils.yMirrorTransform.call(this, payload.event.y),
+          x: utils.xMirrorTransform.call(this, payload.event.x),
+          y: utils.yMirrorTransform.call(this, payload.event.y),
           remote: true
         },
         socket
@@ -103,13 +117,39 @@ class BoardView {
   async drawGrid() {
     const parser = new DOMParser();
     const rootSvgData = parser.parseFromString(rootSvgSrc, 'image/svg+xml');
-    const rootSvg = rootSvgData.firstChild;
 
-    d3.select(this.parent).node().append(rootSvg);
+    d3.select(this.parent).node().append(rootSvgData.firstChild);
+    const rootSvg = d3.select('#view');
+    rootSvg
+      .append('g')
+      .attr('id', 'xAxisBottom')
+      .attr('transform', `translate(40, 680)`)
+      .call(this.xBottomAxis(this.game.player));
+    rootSvg
+      .append('g')
+      .attr('id', 'yAxisLeft')
+      .attr('transform', 'translate(40, 40)')
+      .call(this.yLeftAxis(this.game.player));
+    rootSvg
+      .append('g')
+      .attr('id', 'xAxisTop')
+      .attr('transform', 'translate(40, 40)')
+      .call(this.xTopAxis(this.game.player));
+    rootSvg
+      .append('g')
+      .attr('id', 'yAxisRight')
+      .attr('transform', 'translate(880, 40)')
+      .call(this.yRightAxis(this.game.player));
+
+    rootSvg.call((g) => {
+      g.selectAll('.domain').remove();
+      g.selectAll('.tick line').attr('opacity', 0);
+    });
   }
 
   async initGame() {
     this.game.player = prompt('Playing black or white?');
+    document.body.classList.add(`${this.game.player.toLowerCase()}`);
     await this.drawGrid();
     this.gameBoardSvg = d3.select('#game-board');
     this.boardWidth = parseInt(this.gameBoardSvg.attr('width'));
@@ -122,7 +162,7 @@ class BoardView {
 
   renderTokens() {
     console.log('rendering tokens');
-    const t = this.tokenLayer.transition().duration(750);
+    const t = this.tokenLayer.transition().duration(2000);
     this.tokenLayer
       .selectAll('circle')
       .data(this.game.pieces, (piece) => piece.id)
@@ -133,10 +173,9 @@ class BoardView {
             .attr('id', (piece) => `token${piece.id}`)
             .attr('cx', (piece) => {
               const col = this.game.getPosition(piece, 'col');
-
               return this.game.player === 'black'
-                ? this.xScale(col)
-                : this.xMirrorScale(col);
+                ? this.xMirrorScale(col)
+                : this.xScale(col);
             })
             .attr('cy', (piece) => {
               const row = this.game.getPosition(piece, 'row');
@@ -149,22 +188,23 @@ class BoardView {
               piece.color === 'white' ? '#E9E5CE' : '#555D50'
             )
             .call(this.drag)
-            .on('click', (e) => dragUtils.clicked.call(this, e)),
-        (update) =>
+            .on('click', (e) => utils.clicked.call(this, e)),
+        (update) => {
           update
-            .call((update) => update.transition(t))
+            .call((update) => update.transition(t)) // sadly, irrelevant
             .attr('cx', (piece) => {
               const col = this.game.getPosition(piece, 'col');
               return this.game.player === 'black'
-                ? this.xScale(col)
-                : this.xMirrorScale(col);
+                ? this.xMirrorScale(col)
+                : this.xScale(col);
             })
             .attr('cy', (piece) => {
               const row = this.game.getPosition(piece, 'row');
               return this.game.player === 'black'
                 ? this.yScale(row)
                 : this.yMirrorScale(row);
-            }),
+            });
+        },
         (exit) =>
           exit
             .call((exit) => exit.transition(t))

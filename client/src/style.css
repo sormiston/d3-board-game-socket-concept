@@ -7,10 +7,15 @@
   text-align: center;
 }
 
+.black {
+  background: #000;
+  color: white;
+}
 svg {
-  cursor: url('./assets/hand-cleaned-back-0.png'), pointer;
+  cursor: url('./assets/hand-cleaned-back-0.png') 9 12, pointer;
 }
 .container {
+  margin: 50px auto 0;
   width: 100%;
 }
 
@@ -19,9 +24,19 @@ h2 {
   font-family: 'Cinzel-Regular', serif;
 }
 
+.tick text {
+  font-size: 1.5rem;
+}
+
 @media (min-width: 576px) {
   .container,
   .container-sm {
     max-width: 540px;
+  }
+}
+
+@media (min-width: 720px) {
+  .container {
+    max-width: 720px;
   }
 }
