@@ -54,6 +54,21 @@ class BoardModel {
     }
   }
 
+  attemptMove(view, piece, oldPos, newPos) {
+    const moveConfirmed = this.checkLegality(newPos, oldPos);
+    if (moveConfirmed) {
+      this.board[oldPos.row][oldPos.col] = null;
+      this.board[newPos.row][newPos.col] = piece;
+
+      this.checkCapture(newPos);
+      view.updateToPlayDisplay();
+      view.renderTokens();
+    } else {
+      // calling render function "rolls back" illegal user action
+      view.renderTokens();
+    }
+  }
+
   checkLegality(newPos, oldPos) {
     // false if not actually moved
     if (isEqual(newPos, oldPos)) return false;
@@ -102,6 +117,9 @@ class BoardModel {
       // checks pass
       return true;
     }
+  }
+  checkCapture() {
+    console.log('ding!');
   }
 }
 

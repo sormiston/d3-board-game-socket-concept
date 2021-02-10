@@ -16,8 +16,6 @@ function dragstarted(event, socket) {
     return;
   }
   pieceSelect.attr('stroke', 'black');
-  console.log(event);
-  console.log(d3.event);
   // socket emit
   if (!event.remote) {
     socket.emit('dragStart', {
@@ -63,9 +61,8 @@ function dragended(event, socket) {
     return;
   }
 
+  // TODO: consider splitting the below as an "attemptMove" method of this.game
   const piece = event.subject;
-  // ROW:COL
-
   const oldPos = this.game.getPosition(piece);
   const newPos = {
     row:
@@ -77,19 +74,7 @@ function dragended(event, socket) {
         ? this.xMirrorReverseScale(event.x)
         : this.xReverseScale(event.x)
   };
-
-  const moveConfirmed = this.game.checkLegality(newPos, oldPos);
-  if (moveConfirmed) {
-    const piece = event.subject;
-    this.game.board[oldPos.row][oldPos.col] = null;
-    this.game.board[newPos.row][newPos.col] = piece;
-
-    this.updateToPlayDisplay();
-    this.renderTokens();
-  } else {
-    // calling render function "rolls back" illegal user action
-    this.renderTokens();
-  }
+  this.game.attemptMove(this, piece, oldPos, newPos);
 
   // socket emit
   if (!event.remote) {
