@@ -15,6 +15,7 @@ class BoardModel {
     this.board = board;
     this.pieces = pieces;
     this.player = undefined;
+    this.view = undefined;
     this.toPlay = 'White';
     // more state stuff ...
   }
@@ -36,17 +37,16 @@ class BoardModel {
     // potentially breaking...?
     return null;
   }
+
   setup() {
     for (let row of range(0, 8)) {
       this.board.push(new Array(12).fill(null));
     }
-
     for (let row of [0]) {
       for (let col of range(0, 12)) {
         this.addPiece(new Piece('white', 'pawn'), [row, col]);
       }
     }
-
     for (let row of [7]) {
       for (let col of range(0, 12)) {
         this.addPiece(new Piece('black', 'pawn'), [row, col]);
@@ -54,18 +54,19 @@ class BoardModel {
     }
   }
 
-  attemptMove(view, piece, oldPos, newPos) {
+  attemptMove(piece, oldPos, newPos) {
     const moveConfirmed = this.checkLegality(newPos, oldPos);
     if (moveConfirmed) {
       this.board[oldPos.row][oldPos.col] = null;
       this.board[newPos.row][newPos.col] = piece;
 
-      this.checkCapture(newPos);
-      view.updateToPlayDisplay();
-      view.renderTokens();
+      this.combat(piece, newPos);
+      console.log(this.board);
+      this.view.updateToPlayDisplay();
+      this.view.renderTokens();
     } else {
-      // calling render function "rolls back" illegal user action
-      view.renderTokens();
+      // calling render function wihthout mutating state "rolls back" any illegal user action
+      this.view.renderTokens();
     }
   }
 
@@ -118,8 +119,75 @@ class BoardModel {
       return true;
     }
   }
-  checkCapture() {
-    console.log('ding!');
+  combat(attacker, newPos) {
+    let combats = [
+      { ...newPos, row: newPos.row + 1, attackVector: 'bottom' },
+      { ...newPos, col: newPos.col + 1, attackVector: 'left' },
+      { ...newPos, row: newPos.row - 1, attackVector: 'top' },
+      { ...newPos, col: newPos.col - 1, attackVector: 'right' }
+    ];
+
+    combats.forEach((square) => {
+      const defender = this.getPiece(square);
+      if (defender && defender.color !== attacker.color) {
+        this.checkCustody(square, defender, attacker);
+      }
+    });
+  }
+
+  checkCustody(square, defender, attacker) {
+    const attackingColor = attacker.color;
+    if (defender.type === 'dux') {
+      console.log('dux case');
+    } else if (
+      (square.row === 0 && square.col === 0) ||
+      (square.row === 0 && square.col === 11) ||
+      (square.row === 7 && square.col === 0) ||
+      (square.row === 7 && square.col === 11)
+    ) {
+      console.log('corner case');
+    } else {
+      // conventional open field combat
+      if (square.attackVector === 'bottom') {
+        const support = this.getPiece({ ...square, row: square.row + 1 });
+        if (support && support.color === attackingColor) {
+          this.removePiece(square, defender);
+        }
+      } else if (square.attackVector === 'left') {
+        const support = this.getPiece({ ...square, col: square.col + 1 });
+        if (support && support.color === attackingColor) {
+          this.removePiece(square, defender);
+        }
+      } else if (square.attackVector === 'top') {
+        const support = this.getPiece({ ...square, row: square.row - 1 });
+        if (support && support.color === attackingColor) {
+          this.removePiece(square, defender);
+        }
+      } else if (square.attackVector === 'right') {
+        const support = this.getPiece({ ...square, col: square.col - 1 });
+        if (support && support.color === attackingColor) {
+          this.removePiece(square, defender);
+        }
+      }
+    }
+  }
+
+  getPiece(square) {
+    if (square.row > 7 || square.row < 0 || square.col > 11 || square.col < 0) {
+      return null;
+    } else {
+      return this.board[square.row][square.col] || null;
+    }
+  }
+  removePiece(square, defender) {
+    this.pieces = this.pieces.filter((piece) => piece.id !== defender.id);
+    this.board[square.row][square.col] = null;
+  }
+  // not used currently
+  normalizeCoords(obj) {
+    obj.row = Math.max(0, Math.min(7, obj.row));
+    obj.col = Math.max(0, Math.min(11, obj.col));
+    return obj;
   }
 }
 

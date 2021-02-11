@@ -107,7 +107,6 @@ class BoardView {
     // Initialization call
     this.initGame();
   }
-  // Mirror transform to be applied on broadcast to opponent
 
   updateToPlayDisplay() {
     this.game.toPlay = this.game.toPlay.toLowerCase() === 'white' ? 'Black' : 'White';
@@ -155,14 +154,16 @@ class BoardView {
     this.boardWidth = parseInt(this.gameBoardSvg.attr('width'));
     this.boardHeight = parseInt(this.gameBoardSvg.attr('height'));
     this.tokenLayer = this.gameBoardSvg.append('g');
-    this.toPlayDisplay = document.querySelector('h2');
+    this.toPlayDisplay = document.querySelector('#toPlay');
     this.toPlayDisplay.innerText = `${this.game.toPlay} to move`;
+    this.game.view = this;
+    console.dir(this.game.pieces);
     this.renderTokens();
   }
 
   renderTokens() {
     console.log('rendering tokens');
-    const t = this.tokenLayer.transition().duration(2000);
+    const t = this.tokenLayer.transition().duration(500);
     this.tokenLayer
       .selectAll('circle')
       .data(this.game.pieces, (piece) => piece.id)
@@ -189,27 +190,27 @@ class BoardView {
             )
             .call(this.drag)
             .on('click', (e) => utils.clicked.call(this, e)),
-        (update) => {
-          update
-            .call((update) => update.transition(t)) // sadly, irrelevant
-            .attr('cx', (piece) => {
-              const col = this.game.getPosition(piece, 'col');
-              return this.game.player === 'black'
-                ? this.xMirrorScale(col)
-                : this.xScale(col);
-            })
-            .attr('cy', (piece) => {
-              const row = this.game.getPosition(piece, 'row');
-              return this.game.player === 'black'
-                ? this.yScale(row)
-                : this.yMirrorScale(row);
-            });
-        },
+        (update) =>
+          update.call((update) =>
+            update
+              .transition(t)
+              .attr('cx', (piece) => {
+                const col = this.game.getPosition(piece, 'col');
+                return this.game.player === 'black'
+                  ? this.xMirrorScale(col)
+                  : this.xScale(col);
+              })
+              .attr('cy', (piece) => {
+                const row = this.game.getPosition(piece, 'row');
+                return this.game.player === 'black'
+                  ? this.yScale(row)
+                  : this.yMirrorScale(row);
+              })
+          ),
         (exit) =>
           exit
-            .call((exit) => exit.transition(t))
-            .attr('opacity', 0)
-            .remove()
+            .attr('fill', 'rebeccapurple')
+            .call((exit) => exit.transition(t).style('opacity', 0).remove())
       );
   }
 }

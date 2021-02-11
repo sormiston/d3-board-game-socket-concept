@@ -1,3 +1,5 @@
+// "this" refers to active instance of BoardView in all cases
+
 function xMirrorTransform(x) {
   return this.boardWidth - x;
 }
@@ -74,7 +76,7 @@ function dragended(event, socket) {
         ? this.xMirrorReverseScale(event.x)
         : this.xReverseScale(event.x)
   };
-  this.game.attemptMove(this, piece, oldPos, newPos);
+  this.game.attemptMove(piece, oldPos, newPos);
 
   // socket emit
   if (!event.remote) {
