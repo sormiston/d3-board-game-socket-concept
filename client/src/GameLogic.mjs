@@ -42,18 +42,31 @@ class BoardModel {
     for (let row of range(0, 8)) {
       this.board.push(new Array(12).fill(null));
     }
-    for (let row of [0]) {
-      for (let col of range(0, 12)) {
-        this.addPiece(new Piece('white', 'pawn'), [row, col]);
-      }
-    }
-    for (let row of [7]) {
-      for (let col of range(0, 12)) {
-        this.addPiece(new Piece('black', 'pawn'), [row, col]);
-      }
-    }
-    this.addPiece(new Piece('white', 'dux'), [1, 6]);
-    this.addPiece(new Piece('black', 'dux'), [6, 5]);
+    // testing set up
+    this.addPiece(new Piece('white', 'dux'), [0, 0]);
+    this.addPiece(new Piece('white', 'dux'), [7, 0]);
+    this.addPiece(new Piece('black', 'dux'), [0, 11]);
+    this.addPiece(new Piece('black', 'dux'), [7, 11]);
+
+    this.addPiece(new Piece('white', 'pawn'), [0, 1]);
+    this.addPiece(new Piece('white', 'pawn'), [0, 6]);
+    this.addPiece(new Piece('black', 'pawn'), [1, 4]);
+
+    this.addPiece(new Piece('white', 'pawn'), [6, 4]);
+
+    // standard set up
+    // for (let row of [0]) {
+    //   for (let col of range(0, 12)) {
+    //     this.addPiece(new Piece('white', 'pawn'), [row, col]);
+    //   }
+    // }
+    // for (let row of [7]) {
+    //   for (let col of range(0, 12)) {
+    //     this.addPiece(new Piece('black', 'pawn'), [row, col]);
+    //   }
+    // }
+    // this.addPiece(new Piece('white', 'dux'), [1, 6]);
+    // this.addPiece(new Piece('black', 'dux'), [6, 5]);
   }
 
   attemptMove(piece, oldPos, newPos) {
@@ -140,16 +153,113 @@ class BoardModel {
   checkCustody(square, defender, attacker) {
     if (defender.type === 'dux') {
       console.log('dux case');
-      // corner cases, below
+      // Checkmate through immobilization, incl. smothered mate (friendly pieces as blocking hazards)
+      // corner cases
+      const declareWinner = () =>
+        console.log(defender.color === 'white' ? 'Black wins!' : 'White wins!');
+      if (square.row === 0 && square.col === 0) {
+        if (
+          this.getPiece({ ...square, row: square.row + 1 }) &&
+          this.getPiece({ ...square, col: square.col + 1 })
+        ) {
+          declareWinner();
+        }
+      } else if (square.row === 0 && square.col === 11) {
+        if (
+          this.getPiece({ ...square, row: square.row + 1 }) &&
+          this.getPiece({ ...square, col: square.col - 1 })
+        ) {
+          declareWinner();
+        }
+      } else if (square.row === 7 && square.col === 0) {
+        if (
+          this.getPiece({ ...square, row: square.row - 1 }) &&
+          this.getPiece({ ...square, col: square.col + 1 })
+        ) {
+          declareWinner();
+        }
+      } else if (square.row === 7 && square.col === 11) {
+        if (
+          this.getPiece({ ...square, row: square.row - 1 }) &&
+          this.getPiece({ ...square, col: square.col - 1 })
+        ) {
+          declareWinner();
+        }
+
+        // edge cases
+      } else if (square.row === 0) {
+        if (
+          this.getPiece({ ...square, col: square.col - 1 }) &&
+          this.getPiece({ ...square, row: square.row + 1 }) &&
+          this.getPiece({ ...square, col: square.col + 1 })
+        ) {
+          declareWinner();
+        }
+      } else if (square.col === 0) {
+        if (
+          this.getPiece({ ...square, row: square.row - 1 }) &&
+          this.getPiece({ ...square, col: square.col + 1 }) &&
+          this.getPiece({ ...square, row: square.row + 1 })
+        ) {
+          declareWinner();
+        }
+      } else if (square.row === 7) {
+        if (
+          this.getPiece({ ...square, col: square.col - 1 }) &&
+          this.getPiece({ ...square, row: square.row - 1 }) &&
+          this.getPiece({ ...square, col: square.col + 1 })
+        ) {
+          declareWinner();
+        }
+      } else if (square.col === 11) {
+        if (
+          this.getPiece({ ...square, row: square.row - 1 }) &&
+          this.getPiece({ ...square, col: square.col - 1 }) &&
+          this.getPiece({ ...square, row: square.row + 1 })
+        ) {
+          declareWinner();
+        }
+
+        // open-field
+      } else {
+        if (
+          this.getPiece({ ...square, col: square.col - 1 }) &&
+          this.getPiece({ ...square, row: square.row + 1 }) &&
+          this.getPiece({ ...square, col: square.col + 1 }) &&
+          this.getPiece({ ...square, row: square.row - 1 })
+        ) {
+          declareWinner();
+        }
+      }
+      // pawn-to-pawn combat
+      // corner cases
     } else if (square.row === 0 && square.col === 0) {
-      if (square.attackVector === 'bottom') {
-        const support = this.getPiece({ ...square, row: square.row + 1 });
+      if (square.attackVector === 'top') {
+        this.custodialCapture(square, defender, attacker, { col: square.col + 1 });
+      } else if (square.attackVector === 'right') {
+        this.custodialCapture(square, defender, attacker, { row: square.row + 1 });
       }
     } else if (square.row === 0 && square.col === 11) {
+      if (square.attackVector === 'top') {
+        this.custodialCapture(square, defender, attacker, { col: square.col - 1 });
+      } else if (square.attackVector === 'left') {
+        this.custodialCapture(square, defender, attacker, { row: square.row + 1 });
+      }
     } else if (square.row === 7 && square.col === 0) {
+      if (square.attackVector === 'bottom') {
+        this.custodialCapture(square, defender, attacker, { col: square.col + 1 });
+      } else if (square.attackVector === 'right') {
+        this.custodialCapture(square, defender, attacker, { row: square.row - 1 });
+      }
     } else if (square.row === 7 && square.col === 11) {
+      if (square.attackVector === 'bottom') {
+        this.custodialCapture(square, defender, attacker, { col: square.col - 1 });
+      } else if (square.attackVector === 'left') {
+        this.custodialCapture(square, defender, attacker, { row: square.row - 1 });
+      }
+
+      // standard pawn to pawn open field combat
     } else {
-      // conventional open field combat
       if (square.attackVector === 'bottom') {
         this.custodialCapture(square, defender, attacker, { row: square.row + 1 });
       } else if (square.attackVector === 'left') {
