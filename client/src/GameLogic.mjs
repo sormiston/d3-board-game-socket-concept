@@ -138,39 +138,34 @@ class BoardModel {
   }
 
   checkCustody(square, defender, attacker) {
-    const attackingColor = attacker.color;
     if (defender.type === 'dux') {
       console.log('dux case');
-    } else if (
-      (square.row === 0 && square.col === 0) ||
-      (square.row === 0 && square.col === 11) ||
-      (square.row === 7 && square.col === 0) ||
-      (square.row === 7 && square.col === 11)
-    ) {
-      console.log('corner case');
+      // corner cases, below
+    } else if (square.row === 0 && square.col === 0) {
+      if (square.attackVector === 'bottom') {
+        const support = this.getPiece({ ...square, row: square.row + 1 });
+      }
+    } else if (square.row === 0 && square.col === 11) {
+    } else if (square.row === 7 && square.col === 0) {
+    } else if (square.row === 7 && square.col === 11) {
     } else {
       // conventional open field combat
       if (square.attackVector === 'bottom') {
-        const support = this.getPiece({ ...square, row: square.row + 1 });
-        if (support && support.color === attackingColor) {
-          this.removePiece(square, defender);
-        }
+        this.custodialCapture(square, defender, attacker, { row: square.row + 1 });
       } else if (square.attackVector === 'left') {
-        const support = this.getPiece({ ...square, col: square.col + 1 });
-        if (support && support.color === attackingColor) {
-          this.removePiece(square, defender);
-        }
+        this.custodialCapture(square, defender, attacker, { col: square.col + 1 });
       } else if (square.attackVector === 'top') {
-        const support = this.getPiece({ ...square, row: square.row - 1 });
-        if (support && support.color === attackingColor) {
-          this.removePiece(square, defender);
-        }
+        this.custodialCapture(square, defender, attacker, { row: square.row - 1 });
       } else if (square.attackVector === 'right') {
-        const support = this.getPiece({ ...square, col: square.col - 1 });
-        if (support && support.color === attackingColor) {
-          this.removePiece(square, defender);
-        }
+        this.custodialCapture(square, defender, attacker, { col: square.col - 1 });
       }
+    }
+  }
+  // dependent on checkCustody func closure availability to square, defender, attacker
+  custodialCapture(square, defender, attacker, offset) {
+    const support = this.getPiece({ ...square, ...offset });
+    if (support && support.color === attacker.color) {
+      this.removePiece(square, defender);
     }
   }
 
