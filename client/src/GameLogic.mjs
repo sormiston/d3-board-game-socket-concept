@@ -52,6 +52,8 @@ class BoardModel {
         this.addPiece(new Piece('black', 'pawn'), [row, col]);
       }
     }
+    this.addPiece(new Piece('white', 'dux'), [1, 6]);
+    this.addPiece(new Piece('black', 'dux'), [6, 5]);
   }
 
   attemptMove(piece, oldPos, newPos) {
@@ -61,7 +63,7 @@ class BoardModel {
       this.board[newPos.row][newPos.col] = piece;
 
       this.combat(piece, newPos);
-      console.log(this.board);
+
       this.view.updateToPlayDisplay();
       this.view.renderTokens();
     } else {

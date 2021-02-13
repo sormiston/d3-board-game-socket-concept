@@ -157,42 +157,72 @@ class BoardView {
     this.toPlayDisplay = document.querySelector('#toPlay');
     this.toPlayDisplay.innerText = `${this.game.toPlay} to move`;
     this.game.view = this;
-    console.dir(this.game.pieces);
     this.renderTokens();
   }
 
   renderTokens() {
     console.log('rendering tokens');
+    const getX = (piece) => {
+      const col = this.game.getPosition(piece, 'col');
+      return this.game.player === 'black' ? this.xMirrorScale(col) : this.xScale(col);
+    };
+    const getY = (piece) => {
+      const row = this.game.getPosition(piece, 'row');
+      return this.game.player === 'black' ? this.yScale(row) : this.yMirrorScale(row);
+    };
     const t = this.tokenLayer.transition().duration(500);
     this.tokenLayer
-      .selectAll('circle')
+      .selectAll('.token')
       .data(this.game.pieces, (piece) => piece.id)
       .join(
-        (enter) =>
-          enter
-            .append('circle')
+        (enter) => {
+          const enterToken = enter
+            .append('g')
+            .attr('class', 'token')
             .attr('id', (piece) => `token${piece.id}`)
-            .attr('cx', (piece) => {
-              const col = this.game.getPosition(piece, 'col');
-              return this.game.player === 'black'
-                ? this.xMirrorScale(col)
-                : this.xScale(col);
-            })
-            .attr('cy', (piece) => {
-              const row = this.game.getPosition(piece, 'row');
-              return this.game.player === 'black'
-                ? this.yScale(row)
-                : this.yMirrorScale(row);
-            })
+            .call(this.drag)
+            .on('click', (e) => utils.clicked.call(this, e));
+
+          enterToken
+            .append('circle')
+            .attr('cx', (piece) => getX(piece))
+            .attr('cy', (piece) => getY(piece))
             .attr('r', this.RADIUS)
             .attr('fill', (piece) =>
               piece.color === 'white' ? '#E9E5CE' : '#555D50'
-            )
-            .call(this.drag)
-            .on('click', (e) => utils.clicked.call(this, e)),
+            );
+
+          enterToken
+            .append('circle')
+            .attr('cx', (piece) => getX(piece))
+            .attr('cy', (piece) => getY(piece))
+            .attr('r', this.RADIUS * 0.75)
+            .attr('stroke', (piece) =>
+              piece.color === 'white' ? '#555D50' : '#E9E5CE'
+            );
+
+          enterToken
+            .append('circle')
+            .attr('cx', (piece) => getX(piece))
+            .attr('cy', (piece) => getY(piece))
+            .attr('r', this.RADIUS * 0.69)
+            .attr('stroke', (piece) =>
+              piece.color === 'white' ? '#555D50' : '#E9E5CE'
+            );
+
+          enterToken
+            .append('circle')
+            .attr('cx', (piece) => getX(piece))
+            .attr('cy', (piece) => getY(piece))
+            .attr('r', this.RADIUS * 0.34)
+            .attr('stroke', '#1f1f1f')
+            .attr('fill', '#d8b646')
+            .style('opacity', (piece) => (piece.type === 'dux' ? 1 : 0));
+        },
         (update) =>
           update.call((update) =>
             update
+              .selectAll('circle')
               .transition(t)
               .attr('cx', (piece) => {
                 const col = this.game.getPosition(piece, 'col');
@@ -209,7 +239,7 @@ class BoardView {
           ),
         (exit) =>
           exit
-            .attr('fill', 'rebeccapurple')
+            .selectAll('circle')
             .call((exit) => exit.transition(t).style('opacity', 0).remove())
       );
   }

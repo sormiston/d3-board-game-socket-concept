@@ -8,7 +8,9 @@ function yMirrorTransform(y) {
 }
 // Drag event handler defs
 function dragstarted(event, socket) {
-  const pieceSelect = this.tokenLayer.select(`#token${event.subject.id}`);
+  const pieceSelect = this.tokenLayer
+    .select(`#token${event.subject.id}`)
+    .select('circle');
   const pieceColor = event.subject.color;
   if (
     !event.remote &&
@@ -17,7 +19,7 @@ function dragstarted(event, socket) {
   ) {
     return;
   }
-  pieceSelect.attr('stroke', 'black');
+  pieceSelect.attr('stroke', '#1f1f1f');
   // socket emit
   if (!event.remote) {
     socket.emit('dragStart', {
@@ -26,7 +28,9 @@ function dragstarted(event, socket) {
   }
 }
 function dragged(event, socket) {
-  const pieceSelect = this.tokenLayer.select(`#token${event.subject.id}`);
+  const pieceSelect = this.tokenLayer
+    .select(`#token${event.subject.id}`)
+    .selectAll('circle');
   const pieceColor = event.subject.color;
   if (
     !event.remote &&
@@ -35,6 +39,7 @@ function dragged(event, socket) {
   ) {
     return;
   }
+
   pieceSelect
     .raise()
     .attr('cx', (d) => Math.max(this.L, Math.min(this.R, event.x)))
@@ -47,7 +52,9 @@ function dragged(event, socket) {
   }
 }
 function dragended(event, socket) {
-  const pieceSelect = this.tokenLayer.select(`#token${event.subject.id}`);
+  const pieceSelect = this.tokenLayer
+    .select(`#token${event.subject.id}`)
+    .select('circle');
   const pieceColor = event.subject.color;
   if (
     !event.remote &&
@@ -64,6 +71,7 @@ function dragended(event, socket) {
   }
 
   // TODO: consider splitting the below as an "attemptMove" method of this.game
+
   const piece = event.subject;
   const oldPos = this.game.getPosition(piece);
   const newPos = {
@@ -87,9 +95,11 @@ function dragended(event, socket) {
 }
 
 function clicked(event) {
+  console.log(event);
+  console.log(this);
   if (event.defaultPrevented) return; // dragged
   this.tokenLayer
-    .select(`#${event.target.id}`)
+    .select(`#token${event.target.__data__.id}`)
     .transition()
     .attr('r', this.RADIUS * 2)
     .transition()
