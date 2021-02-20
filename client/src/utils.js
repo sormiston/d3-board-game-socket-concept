@@ -28,9 +28,8 @@ function dragstarted(event, socket) {
   }
 }
 function dragged(event, socket) {
-  const pieceSelect = this.tokenLayer
-    .select(`#token${event.subject.id}`)
-    .selectAll('circle');
+  const pieceSelect = this.tokenLayer.select(`#token${event.subject.id}`);
+
   const pieceColor = event.subject.color;
   if (
     !event.remote &&
@@ -42,6 +41,7 @@ function dragged(event, socket) {
 
   pieceSelect
     .raise()
+    .selectAll('circle')
     .attr('cx', (d) => Math.max(this.L, Math.min(this.R, event.x)))
     .attr('cy', (d) => Math.max(this.T, Math.min(this.B, event.y)));
 
