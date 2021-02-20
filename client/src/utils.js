@@ -95,8 +95,6 @@ function dragended(event, socket) {
 }
 
 function clicked(event) {
-  console.log(event);
-  console.log(this);
   if (event.defaultPrevented) return; // dragged
   this.tokenLayer
     .select(`#token${event.target.__data__.id}`)
