@@ -1,16 +1,20 @@
+import path from 'path'
 import express from 'express';
-import { createServer } from 'http';
+import { createServer } from 'http'
 import { Server } from 'socket.io';
 import GameLogic from './client/src/GameLogic.mjs';
-const PORT = process.env.port || 3000;
-const httpServer = createServer(express);
-const io = new Server(httpServer, {
-  cors: {
-    origin: 'http://localhost:8080',
-    methods: ['GET', 'POST']
-  }
-});
 
+
+const __dirname = path.resolve();
+const DIST = 'client/dist'
+const PORT = process.env.port || 3000;
+
+const app = express()
+app.use(express.static(DIST))
+  
+const httpServer = createServer(app);
+const io = new Server(httpServer);
+  
 const game = new GameLogic.BoardModel();
 game.setup();
 

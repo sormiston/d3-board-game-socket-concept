@@ -5,7 +5,9 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon server.js"
+    "start": "nodemon server.js",
+    "prebuild": "npm i && cd client && npm i",
+    "build": "pwd && cd client && npm run build"
   },
   "keywords": [],
   "author": "",
