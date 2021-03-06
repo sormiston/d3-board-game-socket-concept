@@ -3,9 +3,10 @@ import rootSvgSrc from './assets/Frame3.svg';
 import * as utils from './utils.js';
 import './style.css';
 
-let socket = io('http://localhost:3000');
-let initialized = false;
+let initialized = false
+let socket = io('http://localhost:3000');  
 let socketId;
+
 
 class BoardView {
   RADIUS = 28;

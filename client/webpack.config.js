@@ -6,6 +6,7 @@ module.exports = {
   entry: './src/main.js',
   devtool: 'inline-source-map',
   devServer: {
+    disableHostCheck: true, // for ngrok
     contentBase: path.join(__dirname, 'dist'),
     hot: true,
     compress: true
