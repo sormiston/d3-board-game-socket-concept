@@ -5,10 +5,10 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon server.js",
+    "dev": "nodemon server.js",
+    "start": "node server.js",
     "prebuild": "npm i && cd client && npm i",
-    "build": "cd client && npm run build",
-    "postbuild": "node server.js"
+    "build": "cd client && npm run build"
   },
   "keywords": [],
   "author": "",
