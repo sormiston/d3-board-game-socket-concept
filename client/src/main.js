@@ -4,9 +4,8 @@ import * as utils from './utils.js';
 import './style.css';
 
 let initialized = false
-let socket = io('http://localhost:3000');  
+let socket = io();  //
 let socketId;
-
 
 class BoardView {
   RADIUS = 28;
