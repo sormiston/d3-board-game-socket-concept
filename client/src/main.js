@@ -3,8 +3,8 @@ import rootSvgSrc from './assets/Frame3.svg';
 import * as utils from './utils.js';
 import './style.css';
 
-let initialized = false
-let socket = io();  //
+let initialized = false;
+let socket = io(); //
 let socketId;
 
 class BoardView {
