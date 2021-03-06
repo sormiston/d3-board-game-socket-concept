@@ -1,5 +1,5 @@
 {
-  "name": "d3-websocket-drag",
+  "name": "ludus-latrunculorum-d3-socket.io",
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
@@ -7,7 +7,8 @@
   "scripts": {
     "start": "nodemon server.js",
     "prebuild": "npm i && cd client && npm i",
-    "build": "pwd && cd client && npm run build"
+    "build": "cd client && npm run build",
+    "postbuild": "node server.js"
   },
   "keywords": [],
   "author": "",
