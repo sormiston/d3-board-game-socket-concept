@@ -1,79 +1,87 @@
 // "this" refers to active instance of BoardView in all cases
+// TODO: if (!event.remote) check can be replaced by socket.broadcast?  Better socket pattern?
 
 function xMirrorTransform(x) {
-  return this.boardWidth - x;
+  return this.boardWidth - x
 }
 function yMirrorTransform(y) {
-  return this.boardHeight - y;
+  return this.boardHeight - y
 }
 // Drag event handler defs
 function dragstarted(event, socket) {
   const pieceSelect = this.tokenLayer
     .select(`#token${event.subject.id}`)
-    .select('circle');
-  const pieceColor = event.subject.color;
+    .select('circle')
+  const pieceColor = event.subject.color
   if (
     !event.remote &&
     (pieceColor.toLowerCase() !== this.game.player.toLowerCase() ||
       this.game.player.toLowerCase() !== this.game.toPlay.toLowerCase())
   ) {
-    return;
+    return
   }
-  pieceSelect.attr('stroke', '#1f1f1f');
+  pieceSelect.attr('stroke', '#1f1f1f')
   // socket emit
   if (!event.remote) {
     socket.emit('dragStart', {
       event
-    });
+    })
   }
 }
 function dragged(event, socket) {
-  const pieceSelect = this.tokenLayer.select(`#token${event.subject.id}`);
+  const pieceSelect = this.tokenLayer.select(
+    `#token${event.subject.id}`
+  )
 
-  const pieceColor = event.subject.color;
+  const pieceColor = event.subject.color
   if (
     !event.remote &&
     (pieceColor.toLowerCase() !== this.game.player.toLowerCase() ||
       this.game.player.toLowerCase() !== this.game.toPlay.toLowerCase())
   ) {
-    return;
+    return
   }
 
   pieceSelect
     .raise()
     .selectAll('circle')
     .attr('cx', (d) => Math.max(this.L, Math.min(this.R, event.x)))
-    .attr('cy', (d) => Math.max(this.T, Math.min(this.B, event.y)));
+    .attr('cy', (d) => Math.max(this.T, Math.min(this.B, event.y)))
 
   if (!event.remote) {
     socket.emit('drag', {
       event
-    });
+    })
   }
 }
 function dragended(event, socket) {
   const pieceSelect = this.tokenLayer
     .select(`#token${event.subject.id}`)
-    .select('circle');
-  const pieceColor = event.subject.color;
+    .select('circle')
+  const pieceColor = event.subject.color
   if (
     !event.remote &&
     (pieceColor.toLowerCase() !== this.game.player.toLowerCase() ||
       this.game.player.toLowerCase() !== this.game.toPlay.toLowerCase())
   ) {
-    return;
+    return
   }
 
-  pieceSelect.attr('stroke', null);
-  if (event.x >= 820 || event.x <= 20 || event.y >= 640 || event.y <= 20) {
-    this.renderTokens();
-    return;
+  pieceSelect.attr('stroke', null)
+  if (
+    event.x >= 820 ||
+    event.x <= 20 ||
+    event.y >= 640 ||
+    event.y <= 20
+  ) {
+    this.renderTokens()
+    return
   }
 
   // TODO: consider splitting the below as an "attemptMove" method of this.game
 
-  const piece = event.subject;
-  const oldPos = this.game.getPosition(piece);
+  const piece = event.subject
+  const oldPos = this.game.getPosition(piece)
   const newPos = {
     row:
       this.game.player === 'black'
@@ -83,25 +91,25 @@ function dragended(event, socket) {
       this.game.player === 'black'
         ? this.xMirrorReverseScale(event.x)
         : this.xReverseScale(event.x)
-  };
-  this.game.attemptMove(piece, oldPos, newPos);
+  }
+  this.game.attemptMove(piece, oldPos, newPos)
 
   // socket emit
   if (!event.remote) {
     socket.emit('dragEnd', {
       event
-    });
+    })
   }
 }
 
 function clicked(event) {
-  if (event.defaultPrevented) return; // dragged
+  if (event.defaultPrevented) return // dragged
   this.tokenLayer
     .select(`#token${event.target.__data__.id}`)
     .transition()
     .attr('r', this.RADIUS * 2)
     .transition()
-    .attr('r', this.RADIUS);
+    .attr('r', this.RADIUS)
 }
 
 export {
@@ -111,4 +119,4 @@ export {
   dragged,
   dragended,
   clicked
-};
+}
