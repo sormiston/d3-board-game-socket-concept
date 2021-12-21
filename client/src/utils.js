@@ -78,8 +78,6 @@ function dragended(event, socket) {
     return
   }
 
-  // TODO: consider splitting the below as an "attemptMove" method of this.game
-
   const piece = event.subject
   const oldPos = this.game.getPosition(piece)
   const newPos = {
@@ -102,6 +100,7 @@ function dragended(event, socket) {
   }
 }
 
+// Not needed ?
 function clicked(event) {
   if (event.defaultPrevented) return // dragged
   this.tokenLayer
