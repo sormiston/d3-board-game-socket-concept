@@ -6,14 +6,15 @@
   "type": "module",
   "scripts": {
     "start": "nodemon server.js",
-    "prebuild": "npm i && cd client && npm i",
-    "build": "pwd && cd client && npm run build"
+    "prebuild": "npm i && pushd client && npm i && popd",
+    "build": "npm run prebuild && pwd && cd client && npm run build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
+    "lodash.isequal": "^4.5.0",
     "lodash.range": "^3.2.0",
     "socket.io": "^3.1.0",
     "uuid": "^8.3.2"
