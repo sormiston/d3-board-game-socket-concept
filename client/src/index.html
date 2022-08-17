@@ -3,13 +3,14 @@
   <head>
     <meta charset="utf-8" />
     <meta name="description" content="" />
+    <script defer src="https://cdn.socket.io/socket.io-3.0.1.min.js"></script>
+    <script defer src="https://d3js.org/d3.v6.js"></script>
     <title>D3 Drag Websocket Test</title>
   </head>
   <body>
-    <div class="container" id="game-area"></div>
-
-    <h2 id="toPlay"></h2>
-    <script src="https://cdn.socket.io/socket.io-3.0.1.min.js"></script>
-    <script src="https://d3js.org/d3.v6.js"></script>
+    <div id="wrapper">
+      <div id="game-area"></div>
+      <h2 id="toPlay"></h2>
+    </div>
   </body>
 </html>
