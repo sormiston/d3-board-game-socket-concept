@@ -4,8 +4,8 @@
   "description": "",
   "private": true,
   "scripts": {
-    "dev": "webpack serve --open",
-    "build": "webpack build"
+    "dev:client": "webpack serve --open",
+    "build:client": "cd client && webpack build"
   },
   "keywords": [],
   "author": "",
@@ -17,7 +17,9 @@
     "lodash.range": "^3.2.0",
     "regenerator-runtime": "^0.13.7",
     "socket.io-client": "^3.1.0",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "webpack": "^5.20.1",
+    "webpack-cli": "^4.10.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.13",
@@ -28,8 +30,6 @@
     "css-loader": "^5.0.1",
     "html-webpack-plugin": "^5.0.0",
     "style-loader": "^2.0.0",
-    "webpack": "^5.20.1",
-    "webpack-cli": "^4.5.0",
     "webpack-dev-server": "^3.11.2"
   },
   "engines": {
